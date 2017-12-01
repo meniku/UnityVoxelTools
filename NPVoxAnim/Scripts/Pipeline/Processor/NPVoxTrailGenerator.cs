@@ -78,10 +78,12 @@ public class NPVoxTrailGenerator : NPVoxCompositeProcessorBase<NPVoxIModelFactor
             return NPVoxModel.NewInstance(NPVoxCoord.ZERO, reuse);
         }
 
+        #if UNITY_EDITOR
         if (SocketOffsets.Length < 4 || ControlPointOffsets.Length < 4)
         {
             ResetSceneTools();
         }
+        #endif
 
         NPVoxModel sourceModel = ((NPVoxIModelFactory)PreviousFrame).GetProduct();
 

@@ -30,12 +30,13 @@ public class NPVoxAnimation : NPipeContainer
         }
     }
 
+    #if UNITY_EDITOR
+
     public override void OnImport()
     {
         MeshFactory.isTemplate = true;
     }
-    
-    #if UNITY_EDITOR
+
     override public UnityEngine.Object[] GetAllSelectableFactories()
     {
         List<UnityEngine.Object> objects = new List<UnityEngine.Object>();
