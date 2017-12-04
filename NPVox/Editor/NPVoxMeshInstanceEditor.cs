@@ -85,6 +85,12 @@ public class NPVoxMeshInstanceEditor : Editor
         {
             Selection.objects = new Object[] { AssetDatabase.LoadAssetAtPath(AssetDatabase.GetAssetPath(instance.meshFactory), typeof(NPipeContainer)) };
         }
+
+
+        if (GUILayout.Button("Invalidate Pipe Container Deep "))
+        {
+            NPipelineUtils.InvalidateAndReimportAllDeep(AssetDatabase.LoadAssetAtPath(AssetDatabase.GetAssetPath(instance.meshFactory), typeof(NPipeContainer)));
+        }
     }
 
     public static void Align(Transform transform)
