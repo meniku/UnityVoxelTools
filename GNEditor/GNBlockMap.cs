@@ -6,10 +6,15 @@ public class GNBlockMap : MonoBehaviour
 {
     public float m_fCellSize = 2.0f;
 
+    public float m_fRedlineX = 40.0f;
+    public float m_fRedlineY = 46.0f;
+
     public Vector3 m_currentCell;
     public Vector3 m_vCellOffset = Vector3.zero;
     public GameObject m_prefab;
     public Bounds m_bounds;
+
+    public bool m_bLocked = false;
     // public int version = 0; // this is just 
 
 #if UNITY_EDITOR
@@ -32,7 +37,7 @@ public class GNBlockMap : MonoBehaviour
         for (float y = pos.y - ySize; y < pos.y + ySize; y += height)
         {
             float lineY = m_vCellOffset.y + Mathf.Floor(y / height) * height + height / 2f;
-            if (Mathf.Abs(lineY + 46f) < 0.1f || Mathf.Abs(lineY + 0f) < 0.1f)
+            if (Mathf.Abs(lineY + m_fRedlineY) < 0.1f || Mathf.Abs(lineY + 0f) < 0.1f)
             {
                 Gizmos.color = new Color(255, 0, 0, 0.5f);
             }
@@ -51,7 +56,7 @@ public class GNBlockMap : MonoBehaviour
         {
             float lineX = m_vCellOffset.x + Mathf.Floor(x / width) * width + width / 2f;
 
-            if (Mathf.Abs(lineX - 40f) < 0.1f || Mathf.Abs(lineX + 0f) < 0.1f)
+            if (Mathf.Abs(lineX - m_fRedlineX) < 0.1f || Mathf.Abs(lineX + 0f) < 0.1f)
             {
                 Gizmos.color = new Color(255, 0, 0, 0.5f);
             }

@@ -330,6 +330,7 @@ public class GNBlockMapEditorVM : ScriptableObject
             m_prefabNavigation.OnFolderChanged -= LoadCurrentRandomBrushFlags;
 
             m_blockMap.m_prefab = m_currentPrefab;
+            m_blockMap.m_bLocked = false;
 
             CalculateBounds();
             RemoveEmptyLayers();
@@ -347,6 +348,7 @@ public class GNBlockMapEditorVM : ScriptableObject
             }
 
             m_blockMap = blockMap;
+            m_blockMap.m_bLocked = true;
             // Undo.RecordObject(m_blockMap, "Scene Save Enforcement");
             // EditorUtility.SetDirty(m_blockMap);
             // UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty();
