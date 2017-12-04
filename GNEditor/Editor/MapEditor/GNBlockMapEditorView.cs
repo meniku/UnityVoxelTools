@@ -275,7 +275,7 @@ public class GNBlockMapEditorView : Editor
         GUILayout.BeginVertical();
         GUILayout.BeginHorizontal();
         string folder = viewModel.CurrentPrefabFolder;
-        string substr = folder.Length > 14 ? folder.Substring(15) : folder;
+        string substr = folder != null && folder.Length > 31 ? folder.Substring(32) : folder;
         EditorGUILayout.TextField(folder != null ? substr : "NONE");
         EditorGUILayout.ObjectField(viewModel.CurrentPrefab, typeof(GameObject), false);
         GUILayout.EndHorizontal();
