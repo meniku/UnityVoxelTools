@@ -26,8 +26,9 @@ public class NPVoxFontRenderer : MonoBehaviour {
             return;
         }
 
-
+        #if UNITY_EDITOR
         Font.UpdateCharacters();
+        #endif
         lastText = Text;
 
         GameObjectUtil.DestroyAllChildren(this.transform);
