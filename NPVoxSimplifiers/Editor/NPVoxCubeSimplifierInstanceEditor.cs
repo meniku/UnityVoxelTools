@@ -56,6 +56,11 @@ public class NPVoxCubeSimplifierInstanceEditor : Editor
         {
             Selection.objects = new Object[] { AssetDatabase.LoadAssetAtPath(AssetDatabase.GetAssetPath(instance.CubeSimplifier), typeof(NPipeContainer)) };
         }
+
+        if (GUILayout.Button("Invalidate Pipe Container Deep "))
+        {
+            NPipelineUtils.InvalidateAndReimportAllDeep(AssetDatabase.LoadAssetAtPath(AssetDatabase.GetAssetPath(instance.CubeSimplifier), typeof(NPipeContainer)));
+        }
     }
 
     public static void Align(Transform transform)

@@ -39,6 +39,9 @@ public class NPVoxTextureAtlas : ScriptableObject
     }
 
     [SerializeField]
+    public bool UpdateMateral = true;
+
+    [SerializeField]
     private List<MaterialEntry> materials = new List<MaterialEntry>();
 
     [System.Serializable]
@@ -90,7 +93,7 @@ public class NPVoxTextureAtlas : ScriptableObject
         }
         albedoTexture.name = "zzz Albedo Texture";
 
-        if( normalTexture.format != TextureFormat.RGB24 )
+        if( normalTexture != null && normalTexture.format != TextureFormat.RGB24 )
         {
             DestroyImmediate(normalTexture, true);
             normalTexture = null;
@@ -147,13 +150,18 @@ public class NPVoxTextureAtlas : ScriptableObject
 
         Material material = entry.material;
 
-        material.SetFloat("_Metallic", sourceMaterial.GetFloat("_Metallic"));
-        material.SetFloat("_Glossiness", sourceMaterial.GetFloat("_Smoothness"));
-        material.SetTexture("_MainTex", albedoTexture);
-        material.SetTexture("_BumpMap", normalTexture);
-        // material.SetTexture("_ParallaxMap", heighmapTexture);
-        material.SetFloat("_BumpScale", 1.0f);
-        material.name = "zzz Cube Material";
+        if (UpdateMateral)
+        {
+            material.SetColor("_Color", sourceMaterial.GetColor("_Color"));
+            material.SetColor("_EmissionColor", sourceMaterial.GetColor("_Emission"));
+            material.SetFloat("_Metallic", sourceMaterial.GetFloat("_Metallic"));
+            material.SetFloat("_Glossiness", sourceMaterial.GetFloat("_Smoothness"));
+            material.SetTexture("_MainTex", albedoTexture);
+            material.SetTexture("_BumpMap", normalTexture);
+            // material.SetTexture("_ParallaxMap", heighmapTexture);
+            material.SetFloat("_BumpScale", 1.0f);
+            material.name = "zzz Cube Material";
+        }
         return material;
     }
 

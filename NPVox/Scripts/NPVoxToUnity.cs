@@ -24,6 +24,15 @@ public class NPVoxToUnity
         }
     }
 
+
+    public NPVoxToUnity(NPVoxCoord voxModelSize, Vector3 voxelSize)
+    {
+        this.voxModel = null;
+        this.voxelSize = voxelSize;
+        this.voxelOffset = Vector3.zero;
+        this.unitySize = new Vector3(voxelSize.x * voxModelSize.X, voxelSize.y * voxModelSize.Y, voxelSize.z * voxModelSize.Z);
+    }
+
     public NPVoxToUnity(Vector3 unityModelSize, Vector3 voxelSize)
     {
         this.voxModel = null;

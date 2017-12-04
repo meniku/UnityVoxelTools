@@ -127,4 +127,13 @@ public class NPVoxMeshOutput : NPVoxCompositeProcessorBase<NPVoxIModelFactory, M
         return "Mesh Output";
     }
 
+
+    virtual public UnityEngine.Object Clone()
+    {
+        NPVoxMeshOutput copy = (NPVoxMeshOutput)base.Clone();
+        copy.NormalVarianceSeed =  Random.Range(0, int.MaxValue);
+        return copy;
+    }
+
+
 }
