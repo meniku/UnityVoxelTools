@@ -10,6 +10,10 @@ So if you're not scared yet: This project is a collection of various tools for w
 
 Altough there could be serveral use cases, the main reason for developing it was to use Unity to allow easy setup of scenes that mimic the look like pixelart but allow realtime lightning ( and thus making it much easier for non-artists like we are to get some good looking scenes :) 
 
+**Play a game based on the tools here: [https://ldjam.com/events/ludum-dare/40/xmas-fair-drinking-simulator](Ludum Dare 40: Xmas Fair Drinking Simulator)**
+
+![Xmas](https://static.jam.vg/content/58f/d/z/cb14.gif)
+
 ![Science](http://labs.nkuebler.de/UnityVoxelTools/images/Science.png)
 
 *[Animated Version](https://twitter.com/twitter/statuses/724237971050893312)*
@@ -81,7 +85,7 @@ And more Features:
 
 ### NPVoxAnim
 
-**This is the most flacky and unoptimized part of the whole tools. Use with care!** There is no simplifiers for any animations available yet, animations work by swapping out models, which is obviously not optimal. Again: use with care!
+**This is the most flacky and unoptimized part of the whole tools. Use with care!** There is no simplifiers for any animations available yet, animations work by swapping out meshes, which is obviously not optimal. Again: use with care!
 
 Extends the NPVox pipe rocessors by:
 
@@ -118,7 +122,7 @@ Adds special "NPVoxAnimation" Container, that has it's own editor extensions to 
 ## Credits
 
 ### Developers
-* Nils Kübler (Main Developer)
+* Nils Kübler (Main Developer [http://twitter.com/nkuebler](@nkuebler))
 * Vitali Maurer (helped with GNBlockMap editor; most of the example images are based on his voxel models and shaders )
 
 ### Used External Code
