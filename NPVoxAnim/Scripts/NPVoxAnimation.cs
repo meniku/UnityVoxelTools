@@ -34,7 +34,10 @@ public class NPVoxAnimation : NPipeContainer
 
     public override void OnImport()
     {
-        MeshFactory.isTemplate = true;
+        if (MeshFactory)
+        {
+            MeshFactory.isTemplate = true;
+        }
     }
 
     override public UnityEngine.Object[] GetAllSelectableFactories()
