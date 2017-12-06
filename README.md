@@ -16,8 +16,6 @@ Altough there could be serveral use cases, the main reason for developing it was
 
 ![Science](http://labs.nkuebler.de/UnityVoxelTools/images/Science.png)
 
-*[Animated Version](https://twitter.com/twitter/statuses/724237971050893312)*
-
 ![Pyramid](http://labs.nkuebler.de/UnityVoxelTools/images/Pyramid.png)
 
 ![Industrial](http://labs.nkuebler.de/UnityVoxelTools/images/Industrial.png)
