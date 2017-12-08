@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class NPVoxFont : ScriptableObject 
+public class NPVoxFont : ScriptableObject, NPipeIImportable
 {
     [System.Serializable]
     public struct Character
@@ -19,14 +19,70 @@ public class NPVoxFont : ScriptableObject
 
     public string FontFolder;
 
+
+    [UnityEngine.SerializeField]
+    private bool isValid = false;
+
     public Character GetCharacter(char c)
     {
+        #if UNITY_EDITOR
+        Import();
+        #endif
         return Characters[(int)c];
     }
 
+    public void Import()
+    {
+        if (!isValid)
+        {
+            UpdateCharacters();
+            isValid = true;
+        }
+    }
+
+    public void Invalidate(bool includeSources = false)
+    {
+        isValid = true;
+    }
+
+    public bool IsValid()
+    {
+        return isValid;
+    }
+
+    public bool IsTemplate()
+    {
+        return false;
+    }
+
+    public void Destroy()
+    {
+        Characters = new Character[]{ };
+    }
+
+    public string GetTypeName()
+    {
+        return "NPVox Font";
+    }
+
+    public string GetInstanceName()
+    {
+        return name;
+    }
+
+    public UnityEngine.Object Clone()
+    {
+        return Instantiate(this);
+    }
+
     #if UNITY_EDITOR
+    public double GetLastInvalidatedTime()
+    {
+        return 0.0f;
+    }
+
     [UnityEditor.MenuItem("Assets/Create/NPVox/Font", false)]
-    static void CreatePipeContainer()
+    static void CreateNPVoxFont()
     {
         var path = NPipelineUtils.GetCreateScriptableObjectAssetPath<NPVoxFont>();
         if (path.Length != 0)
@@ -38,7 +94,7 @@ public class NPVoxFont : ScriptableObject
         }
     }
 
-    public void UpdateCharacters() 
+    private void UpdateCharacters() 
     {
         if (Characters.Length != 128)
         {
