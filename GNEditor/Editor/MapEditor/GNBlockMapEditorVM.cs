@@ -379,17 +379,7 @@ public class GNBlockMapEditorVM : ScriptableObject
 
     private void CalculateBounds()
     {
-        Bounds bounds = new Bounds();
-        Transform[] allTransforms = m_blockMap.GetComponentsInChildren<Transform>();
-        foreach(Transform t in allTransforms )
-        {
-            bounds.Encapsulate( t.position );
-        }
-
-        bounds.min -= Vector3.one * 0.5f;
-        bounds.max += Vector3.one * 0.5f;
-
-        m_blockMap.m_bounds = bounds;
+        m_blockMap.m_bounds = FullMapExtends();
     }
 
     private void RemoveEmptyLayers()
