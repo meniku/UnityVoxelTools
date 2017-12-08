@@ -21,7 +21,8 @@ public class GNBlockMapEditorView : Editor
     {
         // GUILayout.Button("StopEditor");
         DrawDefaultInspector();
-        if( !m_bActive && GUILayout.Button("Edit Blockmap"))
+
+        if( !m_bActive && (useNextViewModel != null || GUILayout.Button("Edit Blockmap")))
         {
             Enable();
         }
