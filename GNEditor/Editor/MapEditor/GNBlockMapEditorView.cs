@@ -29,6 +29,11 @@ public class GNBlockMapEditorView : Editor
         {
             Disable();
         }
+
+        if (m_bActive)
+        {
+            DrawTileEditor();
+        }
     }
 
     public void OnEnable()
@@ -203,6 +208,24 @@ public class GNBlockMapEditorView : Editor
         DrawZIndicator(screenScale);
     }
 
+    private void DrawTileEditor()
+    {
+        if (viewModel.CurrentPrefab != null)
+        {
+            GUILayout.Label("Tile Settings: " + viewModel.CurrentPrefabPath);
+            GNBlockMapTile tile = viewModel.CurrentPrefab.GetComponent<GNBlockMapTile>();
+            if (tile)
+            {
+                UnityEditor.Editor editor = UnityEditor.Editor.CreateEditor(tile);
+                bool changed = editor.DrawDefaultInspector();
+                if (changed)
+                {
+                    // blubb
+                }
+            }
+        }
+    }
+
     private void DrawShowLayerMode()
     {
         GNBlockMapEditorVM.ShowLayerMode mode = viewModel.CurrentShowLayerMode;
@@ -275,7 +298,7 @@ public class GNBlockMapEditorView : Editor
         GUILayout.BeginVertical();
         GUILayout.BeginHorizontal();
         string folder = viewModel.CurrentPrefabFolder;
-        string substr = folder != null && folder.Length > 31 ? folder.Substring(32) : folder;
+        string substr = folder != null && folder.Length > 24 ? folder.Substring(folder.Length - 24) : folder;
         EditorGUILayout.TextField(folder != null ? substr : "NONE");
         EditorGUILayout.ObjectField(viewModel.CurrentPrefab, typeof(GameObject), false);
         GUILayout.EndHorizontal();
