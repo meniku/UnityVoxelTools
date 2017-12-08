@@ -223,6 +223,21 @@ public class GNBlockMapEditorView : Editor
                 {
                     // blubb
                 }
+                if (GUILayout.Button("Delete Tile Component in current Prefab"))
+                {
+                    Undo.DestroyObjectImmediate(viewModel.CurrentPrefab.GetComponent<GNBlockMapTile>());
+//                    Repaint();
+                }
+            }
+            else
+            {
+                if (GUILayout.Button("Create Tile Component in current Prefab"))
+                {
+                    GNBlockMapTile tile2 = viewModel.CurrentPrefab.AddComponent<GNBlockMapTile>();
+                    Undo.RegisterCreatedObjectUndo(tile2, "Painted an Object");
+//                    Repaint();
+//                    EditorUtility.SetDirty(viewModel.CurrentPrefab);
+                }
             }
         }
     }
