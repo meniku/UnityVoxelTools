@@ -75,10 +75,6 @@ public class NPipeImporter : AssetPostprocessor
                 {
                     container.OnImport();
                 }
-                else
-                {
-                    continue;
-                }
 
                 NPipeIImportable[] importables = NPipelineUtils.GetImportables(allAssets);
                 NPipeIImportable[] ordered = NPipelineUtils.FindOutputPipes(importables); // those should be sufficient as they will import all the pipes they depend on anyway
