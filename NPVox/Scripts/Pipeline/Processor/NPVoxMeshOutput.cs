@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 [NPipeAppendableAttribute("Mesh Output", typeof(NPVoxIModelFactory), true, true)]
 public class NPVoxMeshOutput : NPVoxCompositeProcessorBase<NPVoxIModelFactory, Mesh>, NPVoxIMeshFactory, NPipeIInstantiable
@@ -14,6 +15,7 @@ public class NPVoxMeshOutput : NPVoxCompositeProcessorBase<NPVoxIModelFactory, M
     public NPVoxFaces Include = new NPVoxFaces(1, 1, 1, 1, 1, 1);
     public int MinVertexGroups = 1;
     public NPVoxNormalMode[] NormalModePerVoxelGroup = null;
+    public List<NPVoxNormalProcessor> NormalProcessorPipeline = new List<NPVoxNormalProcessor>();
 
     public void OnEnable()
     {

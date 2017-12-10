@@ -1,6 +1,41 @@
 using UnityEngine;
 using System;
 
+public class NPVoxMeshTempData
+{
+    public NPVoxCoord voxCoord = NPVoxCoord.INVALID;
+
+    public bool hasLeft = false;
+    public bool hasRight = false;
+    public bool hasUp = false;
+    public bool hasDown = false;
+    public bool hasForward = false;
+    public bool hasBack = false;
+
+    public bool isHidden = true;
+
+    public bool includeLeft = false;
+    public bool includeRight = false;
+    public bool includeUp = false;
+    public bool includeDown = false;
+    public bool includeBack = false;
+    public bool includeForward = false;
+
+    public int numVertices = 0;
+    public int vertexIndexOffsetBegin = 0;
+    public int vertexGroupIndex = 0;
+
+    public Vector3 voxelCenter = Vector3.zero;
+    public int[] vertexIndexOffsets = new int[ 8 ];
+    public Vector3[] vertexPositionOffsets = new Vector3[ 8 ];
+
+    public NPVoxNormalMode normalMode = NPVoxNormalMode.SMOOTH;
+
+    public NPVoxMeshTempData()
+    {
+    }
+}
+
 public class NPVoxMeshGenerator
 {
     public static void CreateMesh(
@@ -27,6 +62,8 @@ public class NPVoxMeshGenerator
         var normals = new Vector3[model.NumVoxels * 8];
         var tangents = new Vector4[model.NumVoxels * 8];
         var colors = new Color[model.NumVoxels * 8];
+
+        var tmp = new NPVoxMeshTempData[ model.NumVoxels ];
 
         int currentVertexIndex = 0;
         var currentTriangleIndex = new int[vertexGroupCount];
@@ -68,366 +105,394 @@ public class NPVoxMeshGenerator
             voxelsToInclude.Size.Z * cubeSize.z
         );
 
-        NPVoxBox voxelNormalNeighbours = new NPVoxBox(new NPVoxCoord(-1, -1, -1), new NPVoxCoord(1, 1, 1));
+        NPVoxBox voxelNormalNeighbours = new NPVoxBox( new NPVoxCoord( -1, -1, -1 ), new NPVoxCoord( 1, 1, 1 ) );
 
-        NPVoxNormalMode normalMode = NormalMode;
-
+        // Collect temporary data to use for model generation
+        int voxIndex = 0;
         foreach (NPVoxCoord voxCoord in voxelsToInclude.Enumerate())
         {
             if (model.HasVoxel(voxCoord))
             {
-                Vector3 voxelCenter = npVoxToUnity.ToUnityPosition(voxCoord) + cutoutOffset;
+                // Compute voxel center
+                tmp[ voxIndex ] = new NPVoxMeshTempData();
+                tmp[ voxIndex ].voxelCenter = npVoxToUnity.ToUnityPosition(voxCoord) + cutoutOffset;
+                tmp[ voxIndex ].voxCoord = voxCoord;
 
-                int vertexGroupIndex = 0;
+                // Determine vertex group index
+                tmp[ voxIndex ].vertexGroupIndex = 0;
                 if (hasVoxelGroups)
                 {
-                    vertexGroupIndex = model.GetVoxelGroup(voxCoord);
+                    tmp[ voxIndex ].vertexGroupIndex = model.GetVoxelGroup(voxCoord);
                 }
 
-                if (NormalModePerVoxelGroup != null && NormalModePerVoxelGroup.Length > vertexGroupIndex)
+                // Determine normal Mode
+                if (NormalModePerVoxelGroup != null && NormalModePerVoxelGroup.Length > tmp[ voxIndex ].vertexGroupIndex )
                 {
-                    normalMode = NormalModePerVoxelGroup[vertexGroupIndex];
+                    tmp[ voxIndex ].normalMode = NormalModePerVoxelGroup[ tmp[ voxIndex ].vertexGroupIndex ];
                 }
                 else
                 {
-                    normalMode = NormalMode;
+                    tmp[ voxIndex ].normalMode = NormalMode;
                 }
 
                 // do we have this side
-                bool hasLeft = !model.HasVoxel(model.LoopCoord(voxCoord + NPVoxCoord.LEFT, loop));
-                bool hasRight = !model.HasVoxel(model.LoopCoord(voxCoord + NPVoxCoord.RIGHT, loop));
-                bool hasDown = !model.HasVoxel(model.LoopCoord(voxCoord + NPVoxCoord.DOWN, loop));
-                bool hasUp = !model.HasVoxel(model.LoopCoord(voxCoord + NPVoxCoord.UP, loop));
-                bool hasForward = !model.HasVoxel(model.LoopCoord(voxCoord + NPVoxCoord.FORWARD, loop));
-                bool hasBack = !model.HasVoxel(model.LoopCoord(voxCoord + NPVoxCoord.BACK, loop));
+                tmp[ voxIndex ].hasLeft = !model.HasVoxel(model.LoopCoord(voxCoord + NPVoxCoord.LEFT, loop));
+                tmp[ voxIndex ].hasRight = !model.HasVoxel(model.LoopCoord(voxCoord + NPVoxCoord.RIGHT, loop));
+                tmp[ voxIndex ].hasDown = !model.HasVoxel(model.LoopCoord(voxCoord + NPVoxCoord.DOWN, loop));
+                tmp[ voxIndex ].hasUp = !model.HasVoxel(model.LoopCoord(voxCoord + NPVoxCoord.UP, loop));
+                tmp[ voxIndex ].hasForward = !model.HasVoxel(model.LoopCoord(voxCoord + NPVoxCoord.FORWARD, loop));
+                tmp[ voxIndex ].hasBack = !model.HasVoxel(model.LoopCoord(voxCoord + NPVoxCoord.BACK, loop));
 
                 // do we actually want to include this side in our mesh
                 // NOTE: cutout < 0 means we still render the mesh even though it is cutout
                 //       cutout > 0 means we don't render the mesh when cutout
-                bool includeLeft = (hasLeft || (cutout.Left < 0 && voxCoord.X == voxelsToInclude.Left)) && include.Left == 1;
-                bool includeRight = (hasRight || (cutout.Right < 0 && voxCoord.X == voxelsToInclude.Right)) && include.Right == 1;
-                bool includeUp = (hasUp || (cutout.Up < 0 && voxCoord.Y == voxelsToInclude.Up)) && include.Up == 1;
-                bool includeDown = (hasDown || (cutout.Down < 0 && voxCoord.Y == voxelsToInclude.Down)) && include.Down == 1;
-                bool includeBack = (hasBack || (cutout.Back < 0 && voxCoord.Z == voxelsToInclude.Back)) && include.Back == 1;
-                bool includeForward = (hasForward || (cutout.Forward < 0 && voxCoord.Z == voxelsToInclude.Forward)) && include.Forward == 1;
-                
-                bool isHidden = !hasForward && !hasBack && !hasLeft && !hasRight && !hasUp && !hasDown;
+                tmp[ voxIndex ].includeLeft = ( tmp[ voxIndex ].hasLeft || (cutout.Left < 0 && voxCoord.X == voxelsToInclude.Left)) && include.Left == 1;
+                tmp[ voxIndex ].includeRight = ( tmp[ voxIndex ].hasRight || (cutout.Right < 0 && voxCoord.X == voxelsToInclude.Right)) && include.Right == 1;
+                tmp[ voxIndex ].includeUp = ( tmp[ voxIndex ].hasUp || (cutout.Up < 0 && voxCoord.Y == voxelsToInclude.Up)) && include.Up == 1;
+                tmp[ voxIndex ].includeDown = ( tmp[ voxIndex ].hasDown || (cutout.Down < 0 && voxCoord.Y == voxelsToInclude.Down)) && include.Down == 1;
+                tmp[ voxIndex ].includeBack = ( tmp[ voxIndex ].hasBack || (cutout.Back < 0 && voxCoord.Z == voxelsToInclude.Back)) && include.Back == 1;
+                tmp[ voxIndex ].includeForward = ( tmp[ voxIndex ].hasForward || (cutout.Forward < 0 && voxCoord.Z == voxelsToInclude.Forward)) && include.Forward == 1;
 
-                if (isHidden && optimization == NPVoxOptimization.PER_VOXEL)
+                tmp[ voxIndex ].isHidden = !tmp[ voxIndex ].hasForward && 
+                                !tmp[ voxIndex ].hasBack && 
+                                !tmp[ voxIndex ].hasLeft && 
+                                !tmp[ voxIndex ].hasRight && 
+                                !tmp[ voxIndex ].hasUp && 
+                                !tmp[ voxIndex ].hasDown;
+
+
+                if ( tmp[ voxIndex ].isHidden && optimization == NPVoxOptimization.PER_VOXEL)
                 {
                     continue;
                 }
 
-                if (isHidden && BloodColorIndex > 0)
+                if ( tmp[ voxIndex ].isHidden && BloodColorIndex > 0)
                 {
-                    model.SetVoxel(voxCoord, (byte)BloodColorIndex); // WTF WTF WTF?!? we should not modify the MODEL in here !!!!
+                    model.SetVoxel(voxCoord, (byte)BloodColorIndex); // WTF WTF WTF?!? we should not modify the MODEL in here !!!!           elfapo: AAAAHHH NOOOO!!!! :O    j.k. ;)
                 }
 
                 Color color = model.GetColor(voxCoord);
 
                 // prepare cube vertices
-                int numVertices = 0;
+                tmp[ voxIndex ].numVertices = 0;
+                tmp[ voxIndex ].vertexIndexOffsetBegin = currentVertexIndex;
 
-                int[] vertexIndexOffsets = new int[8];
-                Vector3[] vertexPositionOffsets = new Vector3[8];
+                if (optimization != NPVoxOptimization.PER_FACE || tmp[ voxIndex ].includeBack || tmp[ voxIndex ].includeLeft || tmp[ voxIndex ].includeDown )
+                {
+                    tmp[ voxIndex ].vertexIndexOffsets[0] = tmp[ voxIndex ].numVertices++;
+                    tmp[ voxIndex ].vertexPositionOffsets[ tmp[ voxIndex ].vertexIndexOffsets[0]] = new Vector3(-0.5f, -0.5f, -0.5f);
+                }
+                if (optimization != NPVoxOptimization.PER_FACE || tmp[ voxIndex ].includeBack || tmp[ voxIndex ].includeRight || tmp[ voxIndex ].includeDown )
+                {
+                    tmp[ voxIndex ].vertexIndexOffsets[1] = tmp[ voxIndex ].numVertices++;
+                    tmp[ voxIndex ].vertexPositionOffsets[ tmp[ voxIndex ].vertexIndexOffsets[1]] = new Vector3(0.5f, -0.5f, -0.5f);
+                }
+                if (optimization != NPVoxOptimization.PER_FACE || tmp[ voxIndex ].includeBack || tmp[ voxIndex ].includeLeft || tmp[ voxIndex ].includeUp )
+                {
+                    tmp[ voxIndex ].vertexIndexOffsets[2] = tmp[ voxIndex ].numVertices++;
+                    tmp[ voxIndex ].vertexPositionOffsets[ tmp[ voxIndex ].vertexIndexOffsets[2]] = new Vector3(-0.5f, 0.5f, -0.5f);
+                }
+                if (optimization != NPVoxOptimization.PER_FACE || tmp[ voxIndex ].includeBack || tmp[ voxIndex ].includeRight || tmp[ voxIndex ].includeUp )
+                {
+                    tmp[ voxIndex ].vertexIndexOffsets[3] = tmp[ voxIndex ].numVertices++;
+                    tmp[ voxIndex ].vertexPositionOffsets[ tmp[ voxIndex ].vertexIndexOffsets[3]] = new Vector3(0.5f, 0.5f, -0.5f);
+                }
+                if (optimization != NPVoxOptimization.PER_FACE || tmp[ voxIndex ].includeForward || tmp[ voxIndex ].includeLeft || tmp[ voxIndex ].includeDown )
+                {
+                    tmp[ voxIndex ].vertexIndexOffsets[4] = tmp[ voxIndex ].numVertices++;
+                    tmp[ voxIndex ].vertexPositionOffsets[ tmp[ voxIndex ].vertexIndexOffsets[4]] = new Vector3(-0.5f, -0.5f, 0.5f);
+                }
+                if (optimization != NPVoxOptimization.PER_FACE || tmp[ voxIndex ].includeForward || tmp[ voxIndex ].includeRight || tmp[ voxIndex ].includeDown )
+                {
+                    tmp[ voxIndex ].vertexIndexOffsets[5] = tmp[ voxIndex ].numVertices++;
+                    tmp[ voxIndex ].vertexPositionOffsets[ tmp[ voxIndex ].vertexIndexOffsets[5]] = new Vector3(0.5f, -0.5f, 0.5f);
+                }
+                if (optimization != NPVoxOptimization.PER_FACE || tmp[ voxIndex ].includeForward || tmp[ voxIndex ].includeLeft || tmp[ voxIndex ].includeUp )
+                {
+                    tmp[ voxIndex ].vertexIndexOffsets[6] = tmp[ voxIndex ].numVertices++;
+                    tmp[ voxIndex ].vertexPositionOffsets[ tmp[ voxIndex ].vertexIndexOffsets[6]] = new Vector3(-0.5f, 0.5f, 0.5f);
+                }
+                if (optimization != NPVoxOptimization.PER_FACE || tmp[ voxIndex ].includeForward || tmp[ voxIndex ].includeRight || tmp[ voxIndex ].includeUp )
+                {
+                    tmp[ voxIndex ].vertexIndexOffsets[7] = tmp[ voxIndex ].numVertices++;
+                    tmp[ voxIndex ].vertexPositionOffsets[ tmp[ voxIndex ].vertexIndexOffsets[7]] = new Vector3(0.5f, 0.5f, 0.5f);
+                }
 
-                if (optimization != NPVoxOptimization.PER_FACE || includeBack || includeLeft || includeDown)
-                {
-                    vertexIndexOffsets[0] = numVertices++;
-                    vertexPositionOffsets[vertexIndexOffsets[0]] = new Vector3(-0.5f, -0.5f, -0.5f);
-                }
-                if (optimization != NPVoxOptimization.PER_FACE || includeBack || includeRight || includeDown)
-                {
-                    vertexIndexOffsets[1] = numVertices++;
-                    vertexPositionOffsets[vertexIndexOffsets[1]] = new Vector3(0.5f, -0.5f, -0.5f);
-                }
-                if (optimization != NPVoxOptimization.PER_FACE || includeBack || includeLeft || includeUp)
-                {
-                    vertexIndexOffsets[2] = numVertices++;
-                    vertexPositionOffsets[vertexIndexOffsets[2]] = new Vector3(-0.5f, 0.5f, -0.5f);
-                }
-                if (optimization != NPVoxOptimization.PER_FACE || includeBack || includeRight || includeUp)
-                {
-                    vertexIndexOffsets[3] = numVertices++;
-                    vertexPositionOffsets[vertexIndexOffsets[3]] = new Vector3(0.5f, 0.5f, -0.5f);
-                }
-                if (optimization != NPVoxOptimization.PER_FACE || includeForward || includeLeft || includeDown)
-                {
-                    vertexIndexOffsets[4] = numVertices++;
-                    vertexPositionOffsets[vertexIndexOffsets[4]] = new Vector3(-0.5f, -0.5f, 0.5f);
-                }
-                if (optimization != NPVoxOptimization.PER_FACE || includeForward || includeRight || includeDown)
-                {
-                    vertexIndexOffsets[5] = numVertices++;
-                    vertexPositionOffsets[vertexIndexOffsets[5]] = new Vector3(0.5f, -0.5f, 0.5f);
-                }
-                if (optimization != NPVoxOptimization.PER_FACE || includeForward || includeLeft || includeUp)
-                {
-                    vertexIndexOffsets[6] = numVertices++;
-                    vertexPositionOffsets[vertexIndexOffsets[6]] = new Vector3(-0.5f, 0.5f, 0.5f);
-                }
-                if (optimization != NPVoxOptimization.PER_FACE || includeForward || includeRight || includeUp)
-                {
-                    vertexIndexOffsets[7] = numVertices++;
-                    vertexPositionOffsets[vertexIndexOffsets[7]] = new Vector3(0.5f, 0.5f, 0.5f);
-                }
 
                 // add cube faces
-                int i = currentTriangleIndex[vertexGroupIndex];
+                int i = currentTriangleIndex[ tmp[ voxIndex ].vertexGroupIndex ];
 
                 // back
-                if (optimization != NPVoxOptimization.PER_FACE || includeBack)
+                if (optimization != NPVoxOptimization.PER_FACE || tmp[ voxIndex ].includeBack )
                 {
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[0];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[2];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[1];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[2];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[3];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[1];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[0];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[2];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[1];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[2];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[3];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[1];
                 }
 
                 // Forward
-                if (optimization != NPVoxOptimization.PER_FACE || includeForward)
+                if (optimization != NPVoxOptimization.PER_FACE || tmp[ voxIndex ].includeForward )
                 {
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[6];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[4];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[5];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[7];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[6];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[5];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[6];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[4];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[5];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[7];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[6];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[5];
                 }
 
                 // right
-                if (optimization != NPVoxOptimization.PER_FACE || includeRight)
+                if (optimization != NPVoxOptimization.PER_FACE || tmp[ voxIndex ].includeRight )
                 {
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[1];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[3];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[5];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[3];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[7];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[5];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[1];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[3];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[5];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[3];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[7];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[5];
                 }
 
                 // left
-                if (optimization != NPVoxOptimization.PER_FACE || includeLeft)
+                if (optimization != NPVoxOptimization.PER_FACE || tmp[ voxIndex ].includeLeft )
                 {
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[0];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[4];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[2];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[2];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[4];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[6];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[0];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[4];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[2];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[2];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[4];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[6];
                 }
 
                 // up
-                if (optimization != NPVoxOptimization.PER_FACE || includeUp)
+                if (optimization != NPVoxOptimization.PER_FACE || tmp[ voxIndex ].includeUp )
                 {
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[2];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[6];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[3];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[3];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[6];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[7];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[2];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[6];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[3];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[3];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[6];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[7];
                 }
 
                 // down
-                if (optimization != NPVoxOptimization.PER_FACE || includeDown)
+                if (optimization != NPVoxOptimization.PER_FACE || tmp[ voxIndex ].includeDown )
                 {
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[0];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[1];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[4];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[1];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[5];
-                    triangles[vertexGroupIndex, i++] = currentVertexIndex + vertexIndexOffsets[4];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[0];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[1];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[4];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[1];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[5];
+                    triangles[ tmp[ voxIndex ].vertexGroupIndex, i++] = tmp[ voxIndex ].vertexIndexOffsetBegin + tmp[ voxIndex ].vertexIndexOffsets[4];
                 }
+                
 
-                // TODO create some kind of strategy pattern for the normal calculation, else this here is becomming a mess ...
-                Vector3 variance = Vector3.zero;
-                if (NormalVariance.x != 0 || NormalVariance.y != 0 || NormalVariance.z != 0)
+                // Tangents
+                for ( int t = 0; t < tmp[ voxIndex ].numVertices; t++)
                 {
-                    variance.x = -NormalVariance.x * 0.5f + 2 * UnityEngine.Random.value * NormalVariance.x;
-                    variance.y = -NormalVariance.y * 0.5f + 2 * UnityEngine.Random.value * NormalVariance.y;
-                    variance.z = -NormalVariance.z * 0.5f + 2 * UnityEngine.Random.value * NormalVariance.z;
-                }
-
-                // calculate normals based on present neighbour voxels
-                Vector3 voxelNormal = Vector3.zero;
-                if (!isHidden)
-                {
-                    foreach (NPVoxCoord offset in voxelNormalNeighbours.Enumerate())
-                    {
-                        NPVoxCoord checkCoord = voxCoord + offset;
-                        checkCoord = model.LoopCoord(checkCoord, loop);
-                        if (!model.HasVoxel(checkCoord))
-                        {
-                            voxelNormal += NPVoxCoordUtil.ToVector(offset);
-                        }
-                    }
-                    voxelNormal.Normalize();
-                }
-                else
-                {
-                    voxelNormal = voxelCenter.normalized;
-                }
-
-                // Normals
-                for (int t = 0; t < numVertices; t++)
-                {
-                    Vector3 normal = Vector3.zero;
-
-                    switch (normalMode)
-                    {
-                        case NPVoxNormalMode.VOXEL:
-                            normal = voxelNormal;
-
-                            normal = Vector3.zero;
-
-                            if (vertexPositionOffsets[t].x < 0.0f)
-                            {
-                                if (hasLeft && !hasForward && !hasBack && !hasUp && !hasDown)
-                                {
-                                    normal.x = -1;
-                                }
-                                else
-                                {
-                                    normal.x = voxelNormal.x;
-                                }
-                            }
-                            else if (vertexPositionOffsets[t].x > 0.0f)
-                            {
-                                if (hasRight && !hasForward && !hasBack && !hasUp && !hasDown)
-                                {
-                                    normal.x = 1;
-                                }
-                                else
-                                {
-                                    normal.x = voxelNormal.x;
-                                }
-                            }
-
-                            if (vertexPositionOffsets[t].y < 0.0f)
-                            {
-                                if (hasUp && !hasForward && !hasBack && !hasLeft && !hasRight)
-                                {
-                                    normal.y = -1;
-                                }
-                                else
-                                {
-                                    normal.y = voxelNormal.y;
-                                }
-                            }
-                            else if (vertexPositionOffsets[t].y > 0.0f)
-                            {
-                                if (hasDown && !hasForward && !hasBack && !hasLeft && !hasRight)
-                                {
-                                    normal.y = +1;
-                                }
-                                else
-                                {
-                                    normal.y = voxelNormal.y;
-                                }
-                            }
-
-                            if (vertexPositionOffsets[t].z < 0.0f)
-                            {
-                                if (hasBack && !hasLeft && !hasRight && !hasUp && !hasDown)
-                                {
-                                    normal.z = -1;
-                                }
-                                else
-                                {
-                                    normal.z = voxelNormal.z;
-                                }
-                            }
-                            else if (vertexPositionOffsets[t].z > 0.0f)
-                            {
-                                if (hasForward && !hasLeft && !hasRight && !hasUp && !hasDown)
-                                {
-                                    normal.z = +1;
-                                }
-                                else
-                                {
-                                    normal.z = voxelNormal.z;
-                                }
-                            }
-
-                            if (Mathf.Abs(normal.x) < 0.1f && Mathf.Abs(normal.y) < 0.1f && Mathf.Abs(normal.z) < 0.1f)
-                            {
-                                // we would like to have full color when we are a stand-alone voxel, however there is no way to do so right now, so we just
-                                // fallback to the centoid normal
-                                normal = voxelCenter;
-                            }
-
-                            normal.Normalize();
-                            break;
-
-                        case NPVoxNormalMode.SMOOTH:
-                            normal = Vector3.zero;
-
-                            for (float xx = -0.5f; xx < 1.0f; xx += 1f)
-                                for (float yy = -.5f; yy < 1; yy += 1)
-                                    for (float zz = -.5f; zz < 1; zz += 1)
-                                    {
-                                        sbyte xCoord = (sbyte)Mathf.Round(vertexPositionOffsets[t].x + xx);
-                                        sbyte yCoord = (sbyte)Mathf.Round(vertexPositionOffsets[t].y + yy);
-                                        sbyte zCoord = (sbyte)Mathf.Round(vertexPositionOffsets[t].z + zz);
-
-                                        if (!model.HasVoxel(voxCoord + new NPVoxCoord((sbyte)xCoord, (sbyte)yCoord, (sbyte)zCoord)))
-                                        {
-
-                                            normal += new Vector3(
-                                                xx,
-                                                yy,
-                                                zz
-                                            );
-                                        }
-                                    }
-
-                            normal.Normalize();
-                            break;
-
-                        case NPVoxNormalMode.FORWARD: normal = Vector3.forward; break;
-                        case NPVoxNormalMode.BACK: normal = Vector3.back; break;
-                        case NPVoxNormalMode.UP: normal = Vector3.up; break;
-                        case NPVoxNormalMode.DOWN: normal = Vector3.down; break;
-                        case NPVoxNormalMode.LEFT: normal = Vector3.left; break;
-                        case NPVoxNormalMode.RIGHT: normal = Vector3.right; break;
-
-                    }
-
-                    normals[currentVertexIndex + t] = (normal + variance).normalized;
-
                     // store voxel center for shader usage
                     Vector4 tangent = new Vector4();
-                    tangent.x = voxelCenter.x;
-                    tangent.y = voxelCenter.y;
-                    tangent.z = voxelCenter.z;
+                    tangent.x = tmp[ voxIndex ].voxelCenter.x;
+                    tangent.y = tmp[ voxIndex ].voxelCenter.y;
+                    tangent.z = tmp[ voxIndex ].voxelCenter.z;
                     // encode model size
                     tangent.w = ((voxelsToInclude.Size.X & 0x7F) << 14) | ((voxelsToInclude.Size.Y & 0x7F) << 7) | (voxelsToInclude.Size.Z & 0x7F);
 
-
-                    tangents[currentVertexIndex + t] = tangent;
+                    tangents[ tmp[ voxIndex ].vertexIndexOffsetBegin + t] = tangent;
                 }
 
                 // UVs
-                for (int t = 0; t < numVertices; t++)
+                for (int t = 0; t < tmp[ voxIndex ].numVertices; t++)
                 {
-                    colors[currentVertexIndex + t] = color;
+                    colors[ tmp[ voxIndex ].vertexIndexOffsetBegin + t] = color;
                 }
 
                 // translate & scale vertices to voxel position
-                for (int t = 0; t < numVertices; t++)
+                for (int t = 0; t < tmp[ voxIndex ].numVertices; t++)
                 {
-                    vertices[currentVertexIndex + t] = voxelCenter + Vector3.Scale(vertexPositionOffsets[t], cubeSize);
+                    vertices[ tmp[ voxIndex ].vertexIndexOffsetBegin + t] = tmp[ voxIndex ].voxelCenter + Vector3.Scale( tmp[ voxIndex ].vertexPositionOffsets[t], cubeSize);
                 }
 
-                currentTriangleIndex[vertexGroupIndex] = i;
-                currentVertexIndex += numVertices;
+                currentTriangleIndex[ tmp[ voxIndex ].vertexGroupIndex ] = i;
+                currentVertexIndex += tmp[ voxIndex ].numVertices;
+                voxIndex++;
+            }
+        }
+        
+        // elfapo: Remove invalid voxel information
+        Array.Resize( ref tmp, voxIndex );
+
+        ////////////////////////////////////// NORMAL STAGES ////////////////////////////////////////
+        // elfapo TODO: Move Normal stages to Normal Processor Pipeline: 
+
+        foreach ( NPVoxMeshTempData data in tmp )
+        { 
+            // calculate normals based on present neighbour voxels
+            Vector3 voxelNormal = Vector3.zero;
+            if ( !data.isHidden )
+            {
+                foreach ( NPVoxCoord offset in voxelNormalNeighbours.Enumerate() )
+                {
+                    NPVoxCoord checkCoord = data.voxCoord + offset;
+                    checkCoord = model.LoopCoord( checkCoord, loop );
+                    if ( !model.HasVoxel( checkCoord ) )
+                    {
+                        voxelNormal += NPVoxCoordUtil.ToVector( offset );
+                    }
+                }
+                voxelNormal.Normalize();
+            }
+            else
+            {
+                voxelNormal = data.voxelCenter.normalized;
+            }
+
+            for ( int t = 0; t < data.numVertices; t++ )
+            {
+                Vector3 normal = Vector3.zero;
+
+                switch ( data.normalMode )
+                {
+                    case NPVoxNormalMode.VOXEL:
+                        normal = voxelNormal;
+
+                        normal = Vector3.zero;
+
+                        if ( data.vertexPositionOffsets[ t ].x < 0.0f )
+                        {
+                            if ( data.hasLeft && !data.hasForward && !data.hasBack && !data.hasUp && !data.hasDown )
+                            {
+                                normal.x = -1;
+                            }
+                            else
+                            {
+                                normal.x = voxelNormal.x;
+                            }
+                        }
+                        else if ( data.vertexPositionOffsets[ t ].x > 0.0f )
+                        {
+                            if ( data.hasRight && !data.hasForward && !data.hasBack && !data.hasUp && !data.hasDown )
+                            {
+                                normal.x = 1;
+                            }
+                            else
+                            {
+                                normal.x = voxelNormal.x;
+                            }
+                        }
+
+                        if ( data.vertexPositionOffsets[ t ].y < 0.0f )
+                        {
+                            if ( data.hasUp && !data.hasForward && !data.hasBack && !data.hasLeft && !data.hasRight )
+                            {
+                                normal.y = -1;
+                            }
+                            else
+                            {
+                                normal.y = voxelNormal.y;
+                            }
+                        }
+                        else if ( data.vertexPositionOffsets[ t ].y > 0.0f )
+                        {
+                            if ( data.hasDown && !data.hasForward && !data.hasBack && !data.hasLeft && !data.hasRight )
+                            {
+                                normal.y = +1;
+                            }
+                            else
+                            {
+                                normal.y = voxelNormal.y;
+                            }
+                        }
+
+                        if ( data.vertexPositionOffsets[ t ].z < 0.0f )
+                        {
+                            if ( data.hasBack && !data.hasLeft && !data.hasRight && !data.hasUp && !data.hasDown )
+                            {
+                                normal.z = -1;
+                            }
+                            else
+                            {
+                                normal.z = voxelNormal.z;
+                            }
+                        }
+                        else if ( data.vertexPositionOffsets[ t ].z > 0.0f )
+                        {
+                            if ( data.hasForward && !data.hasLeft && !data.hasRight && !data.hasUp && !data.hasDown )
+                            {
+                                normal.z = +1;
+                            }
+                            else
+                            {
+                                normal.z = voxelNormal.z;
+                            }
+                        }
+
+                        if ( Mathf.Abs( normal.x ) < 0.1f && Mathf.Abs( normal.y ) < 0.1f && Mathf.Abs( normal.z ) < 0.1f )
+                        {
+                            // we would like to have full color when we are a stand-alone voxel, however there is no way to do so right now, so we just
+                            // fallback to the centoid normal
+                            normal = data.voxelCenter;
+                        }
+
+                        normal.Normalize();
+                        break;
+
+                    case NPVoxNormalMode.SMOOTH:
+                        normal = Vector3.zero;
+
+                        for ( float xx = -0.5f; xx < 1.0f; xx += 1f )
+                            for ( float yy = -.5f; yy < 1; yy += 1 )
+                                for ( float zz = -.5f; zz < 1; zz += 1 )
+                                {
+                                    sbyte xCoord = ( sbyte ) Mathf.Round( data.vertexPositionOffsets[ t ].x + xx );
+                                    sbyte yCoord = ( sbyte ) Mathf.Round( data.vertexPositionOffsets[ t ].y + yy );
+                                    sbyte zCoord = ( sbyte ) Mathf.Round( data.vertexPositionOffsets[ t ].z + zz );
+
+                                    if ( !model.HasVoxel( data.voxCoord + new NPVoxCoord( ( sbyte ) xCoord, ( sbyte ) yCoord, ( sbyte ) zCoord ) ) )
+                                    {
+
+                                        normal += new Vector3(
+                                            xx,
+                                            yy,
+                                            zz
+                                        );
+                                    }
+                                }
+
+                        normal.Normalize();
+                        break;
+
+                    case NPVoxNormalMode.FORWARD: normal = Vector3.forward; break;
+                    case NPVoxNormalMode.BACK: normal = Vector3.back; break;
+                    case NPVoxNormalMode.UP: normal = Vector3.up; break;
+                    case NPVoxNormalMode.DOWN: normal = Vector3.down; break;
+                    case NPVoxNormalMode.LEFT: normal = Vector3.left; break;
+                    case NPVoxNormalMode.RIGHT: normal = Vector3.right; break;
+
+                }
+
+                normals[ data.vertexIndexOffsetBegin + t ] = normal;
             }
         }
 
+
+
+        ////////////////////////////////////// NORMAL STAGES ////////////////////////////////////////
+        // elfapo TODO: Test area 'Normal Processor' Move Normal Processor stages to Normal Processor Pipeline: 
+
+        NPVoxNormalProcessor_Variance processor = new NPVoxNormalProcessor_Variance();
+        processor.NormalVariance = NormalVariance;
+        processor.NormalVarianceSeed = NormalVarianceSeed;
+        processor.OneTimeInit();
+        processor.Process( model, tmp, normals, out normals );
+
+        ////////////////////////////////////// NORMAL STAGES ////////////////////////////////////////
+
+
         // shrink arrays as needed
-        if (optimization != NPVoxOptimization.OFF)
+        if ( optimization != NPVoxOptimization.OFF)
         {
             Array.Resize(ref vertices, currentVertexIndex);
             Array.Resize(ref normals, currentVertexIndex);
@@ -468,8 +533,6 @@ public class NPVoxMeshGenerator
                 mesh.SetTriangles(trianglesForVertexGroup, 0);
             }
         }
-
-
 
         mesh.normals = normals;
         mesh.tangents = tangents;
