@@ -2,39 +2,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-
-[System.AttributeUsage( System.AttributeTargets.Class | System.AttributeTargets.Struct )]
-public class NPVoxAttributeNormalProcessor : System.Attribute
-{
-    public string m_editorName;
-
-    public NPVoxAttributeNormalProcessor( string editorName )
-    {
-        m_editorName = editorName;
-    }
-}
-
-public class NPVoxAttributeNormalProcessorParam : PropertyAttribute
-{
-    public string m_editorName;
-
-    public NPVoxAttributeNormalProcessorParam( string editorName )
-    {
-        m_editorName = editorName;
-    }
-}
-
-[System.AttributeUsage( System.AttributeTargets.Class | System.AttributeTargets.Struct )]
-public class NPVoxAttributeNormalProcessorPass : System.Attribute
-{
-    public string m_editorName;
-
-    public NPVoxAttributeNormalProcessorPass( string editorName )
-    {
-        m_editorName = editorName;
-    }
-}
-
 public abstract class NPVoxNormalProcessorPass
 {
     protected Vector3[] m_normalBuffer;
@@ -54,6 +21,7 @@ public abstract class NPVoxNormalProcessorPass
     }
 }
 
+[System.Serializable]
 public abstract class NPVoxNormalProcessor
 {
     protected List<NPVoxNormalProcessorPass> m_passes;

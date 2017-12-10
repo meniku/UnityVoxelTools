@@ -42,6 +42,7 @@ public class NPVoxNormalProcessorPass_Variance : NPVoxNormalProcessorPass
 }
 
 
+[NPVoxAttributeNormalProcessorListItem( "Filter: Noise", typeof( NPVoxNormalProcessor_Variance ), NPVoxNormalProcessorType.Progressive )]
 public class NPVoxNormalProcessor_Variance : NPVoxNormalProcessor
 {
     private NPVoxNormalProcessorPass_Variance m_passVariance;
