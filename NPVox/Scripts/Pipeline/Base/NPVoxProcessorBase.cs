@@ -6,7 +6,7 @@ abstract public class NPVoxProcessorBase<PRODUCT> : ScriptableObject, NPipeIImpo
     private NPipeStorageMode storageMode = NPipeStorageMode.MEMORY;
 
     [SerializeField, HideInInspector]
-    public NPipeStorage storage = new NPipeStorage(); //todo make private
+    private NPipeStorage storage = new NPipeStorage();
 
     [SerializeField, HideInInspector]
     private bool isValid = false;
@@ -185,6 +185,37 @@ abstract public class NPVoxProcessorBase<PRODUCT> : ScriptableObject, NPipeIImpo
             GUILayout.Label("Storage Mode");
             NPipeStorageMode newStorageMode = (NPipeStorageMode) GUILayout.Toolbar((int)storageMode, new string[]{ "RAM", "RESOURCE_CACHE", "ATTACHED" });
 
+            if (newStorageMode != storageMode)
+            {
+                this.storageMode = newStorageMode;
+                changed = true;
+            }
+            GUILayout.EndHorizontal();
+            GUILayout.Space(2f);
+        }
+
+        return changed;
+    }
+
+    virtual public bool DrawMultiInstanceEditor(NPipeEditFlags flags, UnityEngine.Object[] objects)
+    {
+        UnityEditor.Editor editor = UnityEditor.Editor.CreateEditor(objects);
+        bool changed = editor.DrawDefaultInspector();
+
+        if ((flags & NPipeEditFlags.STORAGE_MODE) == NPipeEditFlags.STORAGE_MODE)
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Storage Mode");
+            NPipeStorageMode newStorageMode = (NPipeStorageMode) GUILayout.Toolbar((int)storageMode, new string[]{ "RAM", "RESOURCE_CACHE", "ATTACHED" });
+
+            foreach(UnityEngine.Object o in objects)
+            {
+                if (((NPVoxProcessorBase<PRODUCT>)o).storageMode != storageMode)
+                {
+                    ((NPVoxProcessorBase<PRODUCT>)o).storageMode = newStorageMode;
+                    changed = true;
+                }
+            }
             if (newStorageMode != storageMode)
             {
                 this.storageMode = newStorageMode;

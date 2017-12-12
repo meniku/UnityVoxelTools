@@ -3,27 +3,47 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 
-[CustomEditor(typeof(NPipeContainer))]
+[CustomEditor(typeof(NPipeContainer)), CanEditMultipleObjects]
 public class NPipeContainerEditor : Editor
 {
     private NPipeIImportable editingImportable = null;
-
+    private static NPipeIImportable lastEditingImportable = null;
     private int selectedAppendIndex = 0;
-
     private bool confirmDeletion = false;
-
+    private bool isMultiInstance = false;
     private GUIStyle normalStyle;
     private GUIStyle boldStyle;
-    private  Color thisContainerColor;
+    private Color thisContainerColor;
+    private Color thisContainerMultiColor;
 
     public override void OnInspectorGUI()
     {
+        // try to re-open similar importable to the last one
+        if (editingImportable == null && lastEditingImportable != null)
+        {
+            string warningMessage = "";
+            NPipeIImportable[] imp = NPipelineUtils.GetSimiliarPipes(new UnityEngine.Object[]{ this.target }, this.target as NPipeContainer, lastEditingImportable, out warningMessage);
+            if (imp.Length != 1)
+            {
+                lastEditingImportable = null;
+            }
+            else
+            {
+                editingImportable = imp[0];
+            }
+        }
+
+        isMultiInstance = targets.Length > 1;
+
+        // main inspectorr
         DrawPipelineElements();
 
     }
     protected bool DrawPipelineElements()
     {
+        //==================================================================================================================================
         // setup colors
+        //==================================================================================================================================
         normalStyle = new GUIStyle( (GUIStyle)"helpbox");
         normalStyle.normal.textColor = Color.black;
         normalStyle.fontStyle = FontStyle.Normal;
@@ -31,64 +51,70 @@ public class NPipeContainerEditor : Editor
         boldStyle.normal.textColor = Color.black;
         boldStyle.fontStyle = FontStyle.Bold;
         thisContainerColor = new Color(0.8f, 1.0f, 0.6f);
+        thisContainerMultiColor = new Color(0.8f, 0.6f, 1.0f);
 
         string assetPath = AssetDatabase.GetAssetPath(target);
         NPipeIImportable[] allImportables = NPipelineUtils.GetByType<NPipeIImportable>(target);
         NPipeIImportable[] outputPipes = NPipelineUtils.FindOutputPipes(allImportables);
 
-        // GUILayout.Label("Tools:");
-
-//        assetPathColors.Clear();
+        //==================================================================================================================================
+        // Tool Buttons (Select Me, Invalidation)
+        //==================================================================================================================================
 
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("Select Me"))
         {
-            Selection.activeObject = target;
+            Selection.objects = this.targets;
         }
 
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("Invalidate & Reimport All"))
         {
-            NPipelineUtils.InvalidateAndReimportAll( target );
+            NPipelineUtils.InvalidateAndReimportAll( targets );
         }
         if (GUILayout.Button("Invalidate & Reimport All Deep"))
         {
-            NPipelineUtils.InvalidateAndReimportAllDeep( target );
+            NPipelineUtils.InvalidateAndReimportAllDeep( targets );
         }
         GUILayout.EndHorizontal();
-
         GUILayout.EndHorizontal();
 
+        //==================================================================================================================================
+        // Single Instance Mode Only for Lazyness Tool Buttons (Deleta all Payload, Instantiate)
+        //==================================================================================================================================
 
-        if (GUILayout.Button("Delete all payload"))
+        if (!this.isMultiInstance)
         {
-            UnityEngine.Object[] allObjects = AssetDatabase.LoadAllAssetsAtPath(assetPath);
-            foreach (UnityEngine.Object obj in allObjects)
+            if (GUILayout.Button("Delete all Payload"))
             {
-                if (!(obj is NPipeIImportable) && !(obj is NPipeContainer))
+                UnityEngine.Object[] allObjects = AssetDatabase.LoadAllAssetsAtPath(assetPath);
+                foreach (UnityEngine.Object obj in allObjects)
                 {
-                    DestroyImmediate(obj, true);
+                    if (!(obj is NPipeIImportable) && !(obj is NPipeContainer))
+                    {
+                        DestroyImmediate(obj, true);
+                    }
+                }
+                EditorUtility.SetDirty(target);
+            }
+
+            foreach (NPipeIImportable imp in allImportables)
+            {
+                if (imp is NPipeIInstantiable && GUILayout.Button("Instantiate " + imp.GetInstanceName() + " (" + imp.GetTypeName() +")"))
+                {
+                    ((NPipeIInstantiable)imp).Instatiate();
                 }
             }
-            EditorUtility.SetDirty(target);
         }
 
-        foreach (NPipeIImportable imp in allImportables)
-        {
-            if (imp is NPipeIInstantiable && GUILayout.Button("Instantiate " + imp.GetInstanceName() + " (" + imp.GetTypeName() +")"))
-            {
-                ((NPipeIInstantiable)imp).Instatiate();
-            }
-        }
-
+        //==================================================================================================================================
+        // Draw Pipelines
+        //==================================================================================================================================
         {
             GUILayout.Space(10f);
 
             // headline
             GUILayout.Label(string.Format("Pipelines", allImportables.Length), EditorStyles.boldLabel);
-//            GUIStyle my = new GUIStyle(EditorStyles.boldLabel);
-//            my.normal.textColor = thisContainerColor;
-//            GUILayout.Label(string.Format("({0} elements in this container)", allImportables.Length), my);
 
             // pipelines
             GUILayout.BeginHorizontal();
@@ -98,8 +124,9 @@ public class NPipeContainerEditor : Editor
                 DrawPipelineElements(assetPath, iimp, visited, false);
             }
 
-            GUI.backgroundColor = thisContainerColor;
+            GUI.backgroundColor = isMultiInstance ? thisContainerMultiColor : thisContainerColor;
 
+            if( ! isMultiInstance )
             {
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("Add: ");
@@ -146,6 +173,10 @@ public class NPipeContainerEditor : Editor
         bool thisIsInContainer = thisAssetPath == assetPath;
         bool nextIsInContainer = nextAssetPath == assetPath;
 
+        //====================================================================================================================
+        // Recursion for parent elements
+        //====================================================================================================================
+
         GUILayout.BeginVertical();
         NPipeIComposite composite = importable as NPipeIComposite;
         bool isSource = true;
@@ -176,6 +207,10 @@ public class NPipeContainerEditor : Editor
             GUILayout.EndHorizontal();
         }
 
+        //====================================================================================================================
+        // Background Color
+        //====================================================================================================================
+
         if ((!thisIsInContainer && parentIsInDifferentAsset) || (isSource && !thisIsInContainer && thisAssetPath != null))
         {
             GUILayout.BeginHorizontal();
@@ -193,34 +228,53 @@ public class NPipeContainerEditor : Editor
         }
         else
         {
-
             visited.Add(importable);
+
+            //====================================================================================================================
+            // Action Buttons
+            //====================================================================================================================
+
             if (!thisIsInContainer)
             {
                 GUI.backgroundColor = GetColorForAssetPath(thisAssetPath);
             }
             else
             {
-                GUI.backgroundColor = thisContainerColor;
+                GUI.backgroundColor = isMultiInstance ? thisContainerMultiColor : thisContainerColor;
             }
 
-//            smallTextStyle.font = EditorStyles.miniFont;
-            if (editingImportable == importable)
+            //====================================================================================================================
+            // Delete Editiable
+            //====================================================================================================================
+
+            if (editingImportable == importable && this.targets.Length < 2)
+            {
+                if (this.targets.Length < 2)
+                {
+                    if (!confirmDeletion && GUILayout.Button("Delete"))
+                    {
+                        confirmDeletion = true;
+                    }
+                    else if (confirmDeletion && GUILayout.Button("Sure?"))
+                    {
+                        editingImportable = null;
+                        lastEditingImportable = null;
+                        Delete(assetPath, importable);
+                        AssetDatabase.SaveAssets();
+                    }
+                }
+            }
+
+            //====================================================================================================================
+            // Edit Editiable
+            //====================================================================================================================
+
+            if (editingImportable == importable )
             {
                 if (GUILayout.Button("Close", GUILayout.Width(40)))
                 {
                     editingImportable = null;
-                }
-
-                if (!confirmDeletion && GUILayout.Button("Delete"))
-                {
-                    confirmDeletion = true;
-                }
-                else if (confirmDeletion && GUILayout.Button("Sure?"))
-                {
-                    editingImportable = null;
-                    Delete(assetPath, importable);
-                    AssetDatabase.SaveAssets();
+                    lastEditingImportable = null;
                 }
             }
             else
@@ -228,21 +282,22 @@ public class NPipeContainerEditor : Editor
                 if (thisIsInContainer && GUILayout.Button("Edit", GUILayout.Width(40)))
                 {
                     editingImportable = importable;
+                    lastEditingImportable = importable;
                     confirmDeletion = false;
                 }
             }
 
+            //====================================================================================================================
+            // Editable Label
+            //====================================================================================================================
 
             GUIStyle style = normalStyle;
             if (editingImportable == importable)
             {
                 style = boldStyle;
             }
-            {
-                
-                string n = ((NPipeContainer)target).GetDisplayName( importable );
-                GUILayout.Label(n, style); 
-            }
+            string n = ((NPipeContainer)target).GetDisplayName( importable );
+            GUILayout.Label(n, style); 
         }
         GUILayout.EndHorizontal();
 
@@ -250,7 +305,7 @@ public class NPipeContainerEditor : Editor
         {
             if (thisIsInContainer || nextIsInContainer)
             {
-                DrawArrow(thisContainerColor);
+                DrawArrow(GUI.backgroundColor = isMultiInstance ? thisContainerMultiColor : thisContainerColor);
             }
             else if (nextAssetPath != thisAssetPath)
             {
@@ -267,7 +322,6 @@ public class NPipeContainerEditor : Editor
 
     private void DrawArrow(Color color)
     {
-
         Rect rect = GUILayoutUtility.GetLastRect();
 
         // Draw the lines
@@ -314,6 +368,7 @@ public class NPipeContainerEditor : Editor
     protected void Delete(string path, NPipeIImportable importable)
     {
         editingImportable = null;
+        lastEditingImportable = null;
 
         importable.Destroy();
         Undo.DestroyObjectImmediate(importable as UnityEngine.Object);
@@ -321,26 +376,73 @@ public class NPipeContainerEditor : Editor
         AssetDatabase.Refresh();
     }
 
+    protected void Delete(string path, NPipeIImportable[] importable)
+    {
+        Debug.LogError("Not Yet Supported");
+    }
+
     private void drawPipeEditor( string assetPath )
     {
-
         NPipeIImportable importable = editingImportable as NPipeIImportable;
-        if (importable != null)
+        if (importable == null)
+        {
+            return;
+        }
+
+        //====================================================================================================================
+        // Selected Importable(s) Label
+        //====================================================================================================================
+
+        NPipeIImportable[] multiInstanceEditingImportables = null;
+
+        if (isMultiInstance)
+        {
+            string warningMessage = "";
+            multiInstanceEditingImportables = NPipelineUtils.GetSimiliarPipes(this.targets, this.target as NPipeContainer, this.editingImportable as NPipeIImportable, out warningMessage);
+
+            GUILayout.Space(10f);
+            GUILayout.Label(string.Format("Selected: {0} ( {1} instances )", editingImportable.GetTypeName(), multiInstanceEditingImportables.Length), EditorStyles.boldLabel);
+
+            if (warningMessage.Length > 0)
+            {
+//                GUI.backgroundColor = Color.yellow;
+                GUILayout.Label("WARNING: " + warningMessage);
+            }
+        }
+        else
         {
             GUILayout.Space(10f);
             GUILayout.Label("Selected: " + editingImportable.GetTypeName(), EditorStyles.boldLabel);
+        }
 
-            NPipeIEditable editable = editingImportable as NPipeIEditable;
-            if (editable != null)
+        //====================================================================================================================
+        // Selected Importable(s) Editor Inspectors
+        //====================================================================================================================
+
+        NPipeIEditable editable = editingImportable as NPipeIEditable;
+        if (editable != null)
+        {
+            GUILayout.Label("Edit:");
+            if (isMultiInstance)
             {
-                GUILayout.Label("Edit:");
+                editable.DrawMultiInstanceEditor(~NPipeEditFlags.TOOLS, NPipelineUtils.GetUntypedFactories<NPipeIImportable>(multiInstanceEditingImportables));
+            }
+            else
+            {
                 editable.DrawInspector(~NPipeEditFlags.TOOLS);
             }
+        }
 
-            GUILayout.Space(10f);
-            GUILayout.BeginVertical();
-            GUILayout.Space(10f);
+        GUILayout.Space(10f);
+        GUILayout.BeginVertical();
+        GUILayout.Space(10f);
 
+        //====================================================================================================================
+        // append other pipes 
+        //====================================================================================================================
+
+        if (!isMultiInstance)
+        {
             GUILayout.BeginHorizontal();
             List<System.Type> allTypes = new List<System.Type>();
             List<NPipeAppendableAttribute> allAttrsa = new List<NPipeAppendableAttribute>();
@@ -369,6 +471,7 @@ public class NPipeContainerEditor : Editor
                     {
                         newImportable = NPipelineUtils.CreateAttachedPipe(assetPath, allTypes[selectedAppendIndex], importable) as NPipeIComposite;
                         editingImportable = newImportable;
+                        lastEditingImportable = newImportable;
                         confirmDeletion = false;
                     }
                     if (pipe.separate && GUILayout.Button("New Container"))
@@ -388,9 +491,9 @@ public class NPipeContainerEditor : Editor
                 }
             }
             GUILayout.EndHorizontal();
-
-
-            GUILayout.EndVertical();
         }
+
+
+        GUILayout.EndVertical();
     }
 }

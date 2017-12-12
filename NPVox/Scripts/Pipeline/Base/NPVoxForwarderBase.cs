@@ -122,6 +122,13 @@ abstract public class NPVoxForwarderBase<SOURCE_FACTORY, PRODUCT> : ScriptableOb
         return changed;
     }
 
+    virtual public bool DrawMultiInstanceEditor(NPipeEditFlags flags, UnityEngine.Object[] objects)
+    {
+        UnityEditor.Editor editor = UnityEditor.Editor.CreateEditor(objects);
+        bool changed = editor.DrawDefaultInspector();
+        return changed;
+    }
+
     public double GetLastInvalidatedTime()
     {
         return lastInvalidatedAt;

@@ -20,12 +20,29 @@ public class NPipelineUtils
         return result.ToArray();
     }
 
+    public static UnityEngine.Object[] GetUntypedFactories<T>(T[] objects) where T : class
+    {
+        List<UnityEngine.Object> result = new List<UnityEngine.Object>();
+        foreach (T item in objects)
+        {
+            result.Add(item as UnityEngine.Object);
+        }
+        return result.ToArray();
+    }
+
     public static void InvalidateAndReimportAll(UnityEngine.Object container)
     {
         NPipeIImportable[] allImportables = GetByType<NPipeIImportable>(container);
         InvalidateAll(allImportables);
         EditorUtility.SetDirty(container as UnityEngine.Object);
         AssetDatabase.SaveAssets();
+    }
+    public static void InvalidateAndReimportAll(UnityEngine.Object[] containers)
+    {
+        foreach( UnityEngine.Object container in containers) 
+        {
+            InvalidateAndReimportAll(container);
+        }
     }
 
     public static void InvalidateAll(NPipeIImportable[] allImportables, bool deep = false)
@@ -63,6 +80,13 @@ public class NPipelineUtils
         AssetDatabase.SaveAssets();
     }
 
+    public static void InvalidateAndReimportAllDeep(UnityEngine.Object[] containers)
+    {
+        foreach( UnityEngine.Object container in containers) 
+        {
+            InvalidateAndReimportAllDeep(container);
+        }
+    }
 
     public static void InvalidateAndReimportDeep(NPipeIImportable output)
     {
@@ -258,6 +282,59 @@ public class NPipelineUtils
             }
         }
         return output.ToArray();
+    }
+
+    /// <summary>
+    /// Gets the matching pipes in all input containers that follow the same path (used for multiinstance editing)
+    /// </summary>
+    /// <returns>The matching pipes.</returns>
+    /// <param name="InputContainers">Input containers.</param>
+    /// <param name="lookup">Lookup.</param>
+    public static NPipeIImportable[] GetSimiliarPipes(UnityEngine.Object[] inputContainers, NPipeContainer referenceContainer, NPipeIImportable lookup, out string warningMessage)
+    {
+        // TODO: check for exact matchin structure, there may be cases where we have multiple pipes in a container
+        warningMessage = "";
+
+        List<NPipeIImportable> result = new List<NPipeIImportable>();
+
+        bool bFoundMultiple = false;
+        bool bNotFound = false;
+
+        foreach(UnityEngine.Object container in inputContainers)
+        {
+            NPipeIImportable[] instances2 = GetByType<NPipeIImportable>(container);
+            bool bFound = false;
+            foreach (NPipeIImportable item in instances2)
+            {
+                if(item.GetType() == lookup.GetType())
+                {
+                    result.Add(item);
+                    if (bFound)
+                    {
+                        bFoundMultiple = true;
+                    }
+                    bFound = true;
+
+                }
+            }
+
+            if(!bFound)
+            {
+                bNotFound = true;
+            }
+        }
+
+        if (bFoundMultiple)
+        {
+            warningMessage += "Found Multiple Occurences in some containers. ";
+        }
+
+        if (bNotFound)
+        {
+            warningMessage += "Not foundt in some containers. ";
+        }
+
+        return result.ToArray();
     }
 
     public static bool IsPrevious(NPipeIImportable target, NPipeIImportable previous, bool recursive = false)

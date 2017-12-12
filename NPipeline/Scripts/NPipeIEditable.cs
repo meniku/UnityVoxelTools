@@ -11,5 +11,6 @@ public interface NPipeIEditable
 {
 #if UNITY_EDITOR
     bool DrawInspector(NPipeEditFlags flags);
+    bool DrawMultiInstanceEditor(NPipeEditFlags flags, UnityEngine.Object[] objects);
 #endif
 }
