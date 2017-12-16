@@ -10,12 +10,14 @@ using System.Text;
 public class NPVoxNormalProcessorListDrawer : PropertyDrawer
 {
     // Constants
-    private readonly Color s_colorGUI = new Color( 0.64f, 0.76f, 1.0f );
+    private readonly Color s_colorBackgroundGUI = new Color( 0.64f, 0.76f, 1.0f );
+    private readonly Color s_colorForegroundGUI = new Color( 0.0f, 0.0f, 0.2f );
     private readonly float s_widthHeaderLabel = 150.0f;
     private readonly float s_widthExpandButton = 100.0f;
     private readonly float s_widthUpDownButton = 15.0f;
     private readonly float s_widthTab = 20.0f;
-    private readonly float s_verticalSpacePerProcessorItem = 5.0f;
+    private readonly float s_widthMinItemName = 200.0f;
+    private readonly float s_verticalSpacePerItem = 5.0f;
     private readonly float s_verticalSpaceEnd = 32.0f;
 
     // Members
@@ -24,9 +26,12 @@ public class NPVoxNormalProcessorListDrawer : PropertyDrawer
 
     public override void OnGUI( Rect position, SerializedProperty property, GUIContent label )
     {
+        EditorGUI.BeginProperty( position, label, property );
         // Customize gui style
-        Color previousContainerColor = GUI.backgroundColor;
-        GUI.backgroundColor = s_colorGUI;
+        Color previousBGColor = GUI.backgroundColor;
+        Color previousFGColor = GUI.contentColor;
+        GUI.backgroundColor = s_colorBackgroundGUI;
+        // GUI.contentColor = s_colorForegroundGUI; // Doesn't seem to work
 
         // Header + Expand / Collapse Button
         GUILayout.BeginHorizontal();
@@ -64,16 +69,17 @@ public class NPVoxNormalProcessorListDrawer : PropertyDrawer
             Dictionary<string, System.Type> processorClasses = new Dictionary< string, System.Type >();
             processorClasses.Add( "<None>", null );
             List<System.Type> allTypes = new List<System.Type>( NPipeReflectionUtil.GetAllTypesWithAttribute( typeof( NPVoxAttributeNormalProcessorListItem ) ) );
+            allTypes = allTypes.OrderBy( x => ( ( NPVoxAttributeNormalProcessorListItem ) x.GetCustomAttributes( typeof( NPVoxAttributeNormalProcessorListItem ), true )[ 0 ] ).ListPriority ).ToList();
             foreach ( System.Type factoryType in allTypes )
             {
                 NPVoxAttributeNormalProcessorListItem attr = ( NPVoxAttributeNormalProcessorListItem ) factoryType.GetCustomAttributes( typeof( NPVoxAttributeNormalProcessorListItem ), true )[ 0 ];
 
-                if ( attr.m_classType.BaseType != typeof( NPVoxNormalProcessor ) )
+                if ( attr.ClassType.BaseType != typeof( NPVoxNormalProcessor ) )
                 {
                     continue;
                 }
 
-                processorClasses.Add( attr.m_editorName, factoryType );
+                processorClasses.Add( attr.EditorName, factoryType );
             }
 
             string[] processorKeys = processorClasses.Keys.ToArray();
@@ -97,11 +103,11 @@ public class NPVoxNormalProcessorListDrawer : PropertyDrawer
             {
                 NPVoxAttributeNormalProcessorListItem attr = ( NPVoxAttributeNormalProcessorListItem ) processor.GetType().GetCustomAttributes( typeof( NPVoxAttributeNormalProcessorListItem ), true )[ 0 ];
 
-                GUILayout.Space( s_verticalSpacePerProcessorItem );
+                GUILayout.Space( s_verticalSpacePerItem );
 
                 GUILayout.BeginHorizontal();
                 GUILayout.Space( s_widthTab );
-                GUILayout.Label( attr.m_editorName );
+                GUILayout.Label( attr.EditorName, GUILayout.MinWidth( s_widthMinItemName ) );
 
                 GUILayout.Space( 20.0f );
 
@@ -126,24 +132,25 @@ public class NPVoxNormalProcessorListDrawer : PropertyDrawer
 
                 if ( GUILayout.Button( "Remove" ) )
                 {
-                    
-
                     processorList.RemoveProcessor( processor );
                     break;
                 }
 
                 GUILayout.EndHorizontal();
+                
+                processor.OnGUI();
+                GUILayout.Space( 10.0f );
             }
-
-            EditorGUI.indentLevel--;
-            EditorGUI.indentLevel--;
 
             GUILayout.Space( s_verticalSpaceEnd );
         }
 
 
         // Restore previous gui style
-        GUI.backgroundColor = previousContainerColor;
+        GUI.backgroundColor = previousBGColor;
+        GUI.contentColor = previousFGColor;
+
+        EditorGUI.EndProperty();
     }
 }
 

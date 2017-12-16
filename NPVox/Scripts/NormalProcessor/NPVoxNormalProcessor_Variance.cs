@@ -1,8 +1,9 @@
-﻿using System;
+﻿using UnityEngine;
+using UnityEditor;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using UnityEngine;
 
 public class NPVoxNormalProcessorPass_Variance : NPVoxNormalProcessorPass
 {
@@ -42,7 +43,7 @@ public class NPVoxNormalProcessorPass_Variance : NPVoxNormalProcessorPass
 }
 
 
-[NPVoxAttributeNormalProcessorListItem( "Filter: Noise", typeof( NPVoxNormalProcessor_Variance ), NPVoxNormalProcessorType.Progressive )]
+[NPVoxAttributeNormalProcessorListItem( "Variance", typeof( NPVoxNormalProcessor_Variance ), NPVoxNormalProcessorType.Modifier )]
 public class NPVoxNormalProcessor_Variance : NPVoxNormalProcessor
 {
     private NPVoxNormalProcessorPass_Variance m_passVariance;
@@ -75,5 +76,18 @@ public class NPVoxNormalProcessor_Variance : NPVoxNormalProcessor
     {
         m_passVariance.m_normalVariance = NormalVariance;
         m_passVariance.m_normalVarianceSeed = NormalVarianceSeed;
+    }
+
+    public override void OnGUI()
+    {
+        GUILayout.BeginHorizontal();
+        GUILayout.Space( GUITabWidth );
+        NormalVariance = EditorGUILayout.Vector3Field( "Normal Variance", NormalVariance );
+        GUILayout.EndHorizontal();
+        
+        GUILayout.BeginHorizontal();
+        GUILayout.Space( GUITabWidth );
+        NormalVarianceSeed = EditorGUILayout.IntField( "Normal Variance Seed", NormalVarianceSeed );
+        GUILayout.EndHorizontal();
     }
 }

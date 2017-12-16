@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEditor;
 
+[System.Serializable]
 public abstract class NPVoxNormalProcessorPass
 {
     protected Vector3[] m_normalBuffer;
@@ -24,6 +26,8 @@ public abstract class NPVoxNormalProcessorPass
 [System.Serializable]
 public abstract class NPVoxNormalProcessor
 {
+    protected readonly float GUITabWidth = 40.0f;
+
     protected List<NPVoxNormalProcessorPass> m_passes;
 
     public NPVoxNormalProcessor()
@@ -41,6 +45,11 @@ public abstract class NPVoxNormalProcessor
 
         PerModelInit();
 
+        if ( m_passes.Count == 0 )
+        {
+            Debug.LogError( "NPVox: Normal Processor '" + GetType().ToString() + "' does not contain any passes!" );
+        }
+
         foreach ( NPVoxNormalProcessorPass pass in m_passes )
         {
             if ( pass.IsEnabled )
@@ -54,5 +63,9 @@ public abstract class NPVoxNormalProcessor
         {
             outNormals = inNormals;
         }
+    }
+
+    public virtual void OnGUI()
+    {
     }
 }

@@ -4,22 +4,29 @@ using System.Collections.Generic;
 
 public enum NPVoxNormalProcessorType
 {
-    Generative,     // Generates normals from scratch -> Must be the first in a processor list, otherwise it would override previous results
-    Progressive,    // Modifies existing normals -> Must NOT be the first in processor list
+    Generator,     // Generates normals from scratch -> Should be the first in a processor list, as it overrides previous results
+    Modifier,    // Modifies existing normals -> Should not be the first in processor list
 }
 
 
 [System.AttributeUsage( System.AttributeTargets.Class | System.AttributeTargets.Struct )]
 public class NPVoxAttributeNormalProcessorListItem : System.Attribute
 {
-    public string m_editorName;
-    public System.Type m_classType;
-    NPVoxNormalProcessorType m_processorType;
+    public string Name;
+    public System.Type ClassType;
+    NPVoxNormalProcessorType ProcessorType;
+    public int ListPriority;
 
     public NPVoxAttributeNormalProcessorListItem( string editorName, System.Type classType, NPVoxNormalProcessorType processorType )
     {
-        m_editorName = editorName;
-        m_classType = classType;
-        m_processorType = processorType;
+        Name = editorName;
+        ClassType = classType;
+        ProcessorType = processorType;
+        ListPriority = processorType == NPVoxNormalProcessorType.Generator ? 0 : 1;
+    }
+
+    public string EditorName
+    {
+        get { return ProcessorType.ToString() + ": " + Name; }
     }
 }
