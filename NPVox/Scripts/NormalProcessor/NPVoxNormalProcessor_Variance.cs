@@ -46,13 +46,36 @@ public class NPVoxNormalProcessorPass_Variance : NPVoxNormalProcessorPass
 [NPVoxAttributeNormalProcessorListItem( "Variance", typeof( NPVoxNormalProcessor_Variance ), NPVoxNormalProcessorType.Modifier )]
 public class NPVoxNormalProcessor_Variance : NPVoxNormalProcessor
 {
+    [SerializeField]
     private NPVoxNormalProcessorPass_Variance m_passVariance;
 
+    [SerializeField]
     private NPVoxNormalProcessorPass_Normalize m_passNormalize;
+    
+    [SerializeField]
+    private Vector3 m_normalVariance;
+
+    [SerializeField]
+    private int m_normalVarianceSeed;
 
     // Processor parameters
-    public Vector3 NormalVariance;
-    public int NormalVarianceSeed;
+    public Vector3 NormalVariance
+    {
+        get { return m_normalVariance; }
+        set
+        {
+            m_normalVariance = value;
+        }
+    }
+
+    public int NormalVarianceSeed
+    {
+        get { return m_normalVarianceSeed; }
+        set
+        {
+            m_normalVarianceSeed = value;
+        }
+    }
 
     // c-tor
     public NPVoxNormalProcessor_Variance()
@@ -60,19 +83,11 @@ public class NPVoxNormalProcessor_Variance : NPVoxNormalProcessor
         NormalVariance = Vector3.zero;
     }
 
-    public void OnEnable()
-    {
-        m_passVariance = ScriptableObject.CreateInstance<NPVoxNormalProcessorPass_Variance>();
-        m_passNormalize = ScriptableObject.CreateInstance<NPVoxNormalProcessorPass_Normalize>();
-
-        m_passes.Add( m_passVariance );
-        m_passes.Add( m_passNormalize );
-    }
-
-
     // functions
-    public override void OneTimeInit()
+    protected override void OneTimeInit()
     {
+        m_passVariance = AddPass<NPVoxNormalProcessorPass_Variance>();
+        m_passNormalize = AddPass<NPVoxNormalProcessorPass_Normalize>();
     }
 
     protected override void PerModelInit()
@@ -87,7 +102,7 @@ public class NPVoxNormalProcessor_Variance : NPVoxNormalProcessor
         GUILayout.Space( GUITabWidth );
         NormalVariance = EditorGUILayout.Vector3Field( "Normal Variance", NormalVariance );
         GUILayout.EndHorizontal();
-        
+
         GUILayout.BeginHorizontal();
         GUILayout.Space( GUITabWidth );
         NormalVarianceSeed = EditorGUILayout.IntField( "Normal Variance Seed", NormalVarianceSeed );

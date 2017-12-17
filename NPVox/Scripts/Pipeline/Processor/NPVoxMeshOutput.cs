@@ -15,13 +15,23 @@ public class NPVoxMeshOutput : NPVoxCompositeProcessorBase<NPVoxIModelFactory, M
     public NPVoxFaces Include = new NPVoxFaces(1, 1, 1, 1, 1, 1);
     public int MinVertexGroups = 1;
     public NPVoxNormalMode[] NormalModePerVoxelGroup = null;
-    public NPVoxNormalProcessorList normalProcessors = new NPVoxNormalProcessorList();
+    public NPVoxNormalProcessorList normalProcessors = null;
 
     public void OnEnable()
     {
         if (NormalVarianceSeed == -1)
         {
             NormalVarianceSeed = Random.Range(0, int.MaxValue);
+        }
+
+        if ( !normalProcessors )
+        {
+            normalProcessors = ScriptableObject.CreateInstance<NPVoxNormalProcessorList>();
+            normalProcessors.hideFlags = HideFlags.HideInHierarchy;
+
+            string path = UnityEditor.AssetDatabase.GetAssetPath( this );
+            UnityEditor.AssetDatabase.AddObjectToAsset( normalProcessors, path );
+            UnityEditor.EditorUtility.SetDirty( normalProcessors );
         }
     }
 

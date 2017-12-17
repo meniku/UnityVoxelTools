@@ -26,6 +26,9 @@ public class NPVoxNormalProcessorListDrawer : PropertyDrawer
 
     public override void OnGUI( Rect position, SerializedProperty property, GUIContent label )
     {
+        NPVoxMeshOutput target = property.serializedObject.targetObject as NPVoxMeshOutput;
+        NPVoxNormalProcessorList processorList = target.normalProcessors;
+
         EditorGUI.BeginProperty( position, label, property );
         // Customize gui style
         Color previousBGColor = GUI.backgroundColor;
@@ -35,7 +38,7 @@ public class NPVoxNormalProcessorListDrawer : PropertyDrawer
 
         // Header + Expand / Collapse Button
         GUILayout.BeginHorizontal();
-        GUILayout.Label( "Normal Processors", GUILayout.Width( s_widthHeaderLabel ) );
+        GUILayout.Label( "Normal Processors (" + processorList.GetProcessors().Count + ")", GUILayout.Width( s_widthHeaderLabel ) );
         
         if ( !m_expanded )
         {
@@ -59,12 +62,9 @@ public class NPVoxNormalProcessorListDrawer : PropertyDrawer
             GUILayout.Space( 12.0f );
         }
 
-
         // List management
         if ( m_expanded )
         {
-            NPVoxMeshOutput target = property.serializedObject.targetObject as NPVoxMeshOutput;
-            NPVoxNormalProcessorList processorList = target.normalProcessors;
          
             Dictionary<string, System.Type> processorClasses = new Dictionary< string, System.Type >();
             processorClasses.Add( "<None>", null );
@@ -99,6 +99,9 @@ public class NPVoxNormalProcessorListDrawer : PropertyDrawer
                 }
             }
 
+            NPVoxNormalProcessor itemToMoveUp = null;
+            NPVoxNormalProcessor itemToMoveDown = null;
+
             foreach ( NPVoxNormalProcessor processor in processorList.GetProcessors() )
             {
                 NPVoxAttributeNormalProcessorListItem attr = ( NPVoxAttributeNormalProcessorListItem ) processor.GetType().GetCustomAttributes( typeof( NPVoxAttributeNormalProcessorListItem ), true )[ 0 ];
@@ -120,12 +123,12 @@ public class NPVoxNormalProcessorListDrawer : PropertyDrawer
 
                 if ( GUILayout.Button( "^", GUILayout.Width( s_widthUpDownButton ), GUILayout.ExpandWidth( true ) ) )
                 {
-
+                    itemToMoveUp = processor;
                 }
 
                 if ( GUILayout.Button( "v", GUILayout.Width( s_widthUpDownButton ), GUILayout.ExpandWidth( true ) ) )
                 {
-
+                    itemToMoveDown = processor;
                 }
 
                 GUILayout.Space( 20.0f );
@@ -141,10 +144,21 @@ public class NPVoxNormalProcessorListDrawer : PropertyDrawer
                 processor.OnGUI();
                 GUILayout.Space( 10.0f );
             }
+            
+            if ( itemToMoveUp )
+            {
+                processorList.MoveProcessorUp( itemToMoveUp );
+                itemToMoveUp = null;
+            }
+
+            if ( itemToMoveDown )
+            {
+                processorList.MoveProcessorDown( itemToMoveDown );
+                itemToMoveDown = null;
+            }
 
             GUILayout.Space( s_verticalSpaceEnd );
         }
-
 
         // Restore previous gui style
         GUI.backgroundColor = previousBGColor;

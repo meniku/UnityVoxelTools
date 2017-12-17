@@ -3,13 +3,25 @@ using System;
 using System.Collections.Generic;
 
 [System.Serializable]
-public class NPVoxNormalProcessorList
+public class NPVoxNormalProcessorList : ScriptableObject
 {
-    private List<NPVoxNormalProcessor> m_processorList;
+    [SerializeField]
+    private List<NPVoxNormalProcessor> m_processorList = null;
 
     public NPVoxNormalProcessorList()
     {
-        m_processorList = new List<NPVoxNormalProcessor>();
+    }
+
+    public void OnEnable()
+    {
+        if ( m_processorList == null )
+        {
+            m_processorList = new List<NPVoxNormalProcessor>();
+        }
+        else
+        {
+            //Debug.Log( "NPVoxNormalProcessorList in object '" + UnityEditor.AssetDatabase.GetAssetPath( this ) + "' is already initialized" );
+        }
     }
 
     public NPVoxNormalProcessor AddProcessor( Type processorType )
@@ -18,9 +30,16 @@ public class NPVoxNormalProcessorList
         if ( !newProcessor )
         {
             Debug.LogError( "NPVoxNormalProcessorList: Type parameter '" + processorType.ToString() + "' is not a subclass of NPVoxNormalProcessor!" );
+            return null;
         }
 
         m_processorList.Add( newProcessor );
+        newProcessor.hideFlags = HideFlags.HideInHierarchy;
+
+        string path = UnityEditor.AssetDatabase.GetAssetPath(this);
+        UnityEditor.AssetDatabase.AddObjectToAsset( newProcessor, path );
+        UnityEditor.EditorUtility.SetDirty( newProcessor );
+
         return newProcessor;
     }
 
@@ -28,17 +47,48 @@ public class NPVoxNormalProcessorList
     {
         PROCESSOR_TYPE newProcessor = ScriptableObject.CreateInstance< PROCESSOR_TYPE >();
         m_processorList.Add( newProcessor );
+
+        newProcessor.hideFlags = HideFlags.HideInHierarchy;
+
+        string path = UnityEditor.AssetDatabase.GetAssetPath( this );
+        UnityEditor.AssetDatabase.AddObjectToAsset( newProcessor, path );
+        UnityEditor.EditorUtility.SetDirty( newProcessor );
+
         return newProcessor;
     }
 
     public void DestroyProcessor( NPVoxNormalProcessor processor )
     {
         m_processorList.Remove( processor );
-        ScriptableObject.DestroyImmediate( processor );
+        ScriptableObject.DestroyImmediate( processor, true );
+        UnityEditor.EditorUtility.SetDirty( this );
     }
 
     public List<NPVoxNormalProcessor> GetProcessors()
     {
         return m_processorList;
+    }
+
+    public void MoveProcessorUp( NPVoxNormalProcessor processor )
+    {
+        int index = m_processorList.FindIndex( item => item == processor );
+        if ( index > 0 )
+        {
+            m_processorList.Remove( processor );
+            m_processorList.Insert( index - 1, processor );
+            UnityEditor.EditorUtility.SetDirty( this );
+        }
+
+    }
+
+    public void MoveProcessorDown( NPVoxNormalProcessor processor )
+    {
+        int index = m_processorList.FindIndex( item => item == processor );
+        if ( index >= 0 && index < m_processorList.Count - 1 )
+        {
+            m_processorList.Remove( processor );
+            m_processorList.Insert( index + 1, processor );
+            UnityEditor.EditorUtility.SetDirty( this );
+        }
     }
 }

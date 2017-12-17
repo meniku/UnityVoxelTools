@@ -170,21 +170,40 @@ public class NPVoxNormalProcessorPass_Voxel : NPVoxNormalProcessorPass
 [ NPVoxAttributeNormalProcessorListItem( "From Voxel Data", typeof( NPVoxNormalProcessor_Voxel ), NPVoxNormalProcessorType.Generator ) ]
 public class NPVoxNormalProcessor_Voxel : NPVoxNormalProcessor
 {
-    NPVoxNormalMode NormalMode;
+    [SerializeField]
+    private NPVoxNormalMode m_normalMode;
 
-    NPVoxNormalMode[] NormalModePerVoxGroup;
+    [SerializeField]
+    NPVoxNormalMode[] m_NormalModePerVoxGroup = null;
+
+    // Processor parameters
+    public NPVoxNormalMode NormalMode
+    {
+        get { return m_normalMode; }
+        set
+        {
+            m_normalMode = value;
+        }
+    }
+
+    // Processor parameters
+    public NPVoxNormalMode[] NormalModePerVoxGroup
+    {
+        get { return m_NormalModePerVoxGroup; }
+        set
+        {
+            m_NormalModePerVoxGroup = value;
+        }
+    }
 
     public NPVoxNormalProcessor_Voxel()
     {
     }
 
-    public void OnEnable()
+    protected override void OneTimeInit()
     {
-        m_passes.Add( ScriptableObject.CreateInstance<NPVoxNormalProcessorPass_Voxel>() );
-    }
-
-    public override void OneTimeInit()
-    {
+        m_NormalModePerVoxGroup = new NPVoxNormalMode[ 0 ];
+        AddPass<NPVoxNormalProcessorPass_Voxel>();
     }
 
     protected override void PerModelInit()
@@ -197,5 +216,12 @@ public class NPVoxNormalProcessor_Voxel : NPVoxNormalProcessor
         GUILayout.Space( GUITabWidth );
         NormalMode = ( NPVoxNormalMode ) EditorGUILayout.EnumPopup( "Normal Mode", NormalMode );
         GUILayout.EndHorizontal();
+
+        // TODO: Add normal mode per group drawer
+        //GUILayout.BeginHorizontal();
+        //GUILayout.Space( GUITabWidth );
+        //int listSize = EditorGUILayout.IntField( "Normal Mode Per Voxel Group", m_NormalModePerVoxGroup.Length );
+        //GUILayout.EndHorizontal();
+
     }
 }

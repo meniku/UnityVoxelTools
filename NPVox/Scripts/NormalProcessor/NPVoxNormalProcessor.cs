@@ -28,16 +28,24 @@ public abstract class NPVoxNormalProcessor : ScriptableObject
 {
     protected readonly float GUITabWidth = 40.0f;
 
-    protected List<NPVoxNormalProcessorPass> m_passes;
+    protected List<NPVoxNormalProcessorPass> m_passes = null;
 
     public NPVoxNormalProcessor()
     {
-        m_passes = new List<NPVoxNormalProcessorPass>();
     }
-
+    
     protected abstract void PerModelInit();
 
-    public abstract void OneTimeInit();
+    protected abstract void OneTimeInit();
+
+    public void OnEnable()
+    {
+        if ( m_passes == null )
+        {
+            m_passes = new List<NPVoxNormalProcessorPass>();
+            OneTimeInit();
+        }
+    }
 
     public void Process( NPVoxModel model, NPVoxMeshTempData[] tempdata, Vector3[] inNormals, out Vector3[] outNormals )
     {
@@ -69,7 +77,7 @@ public abstract class NPVoxNormalProcessor : ScriptableObject
     {
         foreach( NPVoxNormalProcessorPass pass in m_passes )
         {
-            ScriptableObject.DestroyImmediate( pass );
+            ScriptableObject.DestroyImmediate( pass, true );
         }
 
         m_passes.Clear();
@@ -77,5 +85,23 @@ public abstract class NPVoxNormalProcessor : ScriptableObject
 
     public virtual void OnGUI()
     {
+    }
+
+    protected PASS_TYPE AddPass<PASS_TYPE>() where PASS_TYPE : NPVoxNormalProcessorPass
+    {
+        PASS_TYPE pass = ScriptableObject.CreateInstance<PASS_TYPE>();
+
+        m_passes.Add( pass );
+
+        pass.hideFlags = HideFlags.HideInHierarchy;
+
+        string path = UnityEditor.AssetDatabase.GetAssetPath( this );
+        if ( path.Length > 0 )
+        {
+            UnityEditor.AssetDatabase.AddObjectToAsset( pass, path );
+            UnityEditor.EditorUtility.SetDirty( pass );
+        }
+
+        return pass;
     }
 }
