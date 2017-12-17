@@ -337,15 +337,18 @@ public class NPVoxMeshGenerator
         ////////////////////////////////////// NORMAL STAGES ////////////////////////////////////////
         // elfapo TODO: Test area 'Normal Processor' Move Normal Processor stages to Normal Processor Pipeline: 
 
-        NPVoxNormalProcessor_Voxel generator = new NPVoxNormalProcessor_Voxel();
+        NPVoxNormalProcessor_Voxel generator = ScriptableObject.CreateInstance<NPVoxNormalProcessor_Voxel>();
         generator.OneTimeInit();
         generator.Process( model, tmp, normals, out normals );
 
-        NPVoxNormalProcessor_Variance processor = new NPVoxNormalProcessor_Variance();
+        NPVoxNormalProcessor_Variance processor = ScriptableObject.CreateInstance<NPVoxNormalProcessor_Variance>();
         processor.NormalVariance = NormalVariance;
         processor.NormalVarianceSeed = NormalVarianceSeed;
         processor.OneTimeInit();
         processor.Process( model, tmp, normals, out normals );
+
+        ScriptableObject.DestroyImmediate( generator );
+        ScriptableObject.DestroyImmediate( processor );
 
         ////////////////////////////////////// NORMAL STAGES ////////////////////////////////////////
 

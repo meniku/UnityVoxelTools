@@ -58,9 +58,12 @@ public class NPVoxNormalProcessor_Variance : NPVoxNormalProcessor
     public NPVoxNormalProcessor_Variance()
     {
         NormalVariance = Vector3.zero;
+    }
 
-        m_passVariance = new NPVoxNormalProcessorPass_Variance();
-        m_passNormalize = new NPVoxNormalProcessorPass_Normalize();
+    public void OnEnable()
+    {
+        m_passVariance = ScriptableObject.CreateInstance<NPVoxNormalProcessorPass_Variance>();
+        m_passNormalize = ScriptableObject.CreateInstance<NPVoxNormalProcessorPass_Normalize>();
 
         m_passes.Add( m_passVariance );
         m_passes.Add( m_passNormalize );

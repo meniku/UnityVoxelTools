@@ -14,21 +14,27 @@ public class NPVoxNormalProcessorList
 
     public NPVoxNormalProcessor AddProcessor( Type processorType )
     {
-        NPVoxNormalProcessor newProcessor = Activator.CreateInstance( processorType ) as NPVoxNormalProcessor;
+        NPVoxNormalProcessor newProcessor = ScriptableObject.CreateInstance( processorType ) as NPVoxNormalProcessor;
+        if ( !newProcessor )
+        {
+            Debug.LogError( "NPVoxNormalProcessorList: Type parameter '" + processorType.ToString() + "' is not a subclass of NPVoxNormalProcessor!" );
+        }
+
         m_processorList.Add( newProcessor );
         return newProcessor;
     }
 
     public NPVoxNormalProcessor AddProcessor<PROCESSOR_TYPE>() where PROCESSOR_TYPE : NPVoxNormalProcessor, new()
     {
-        PROCESSOR_TYPE newProcessor = new PROCESSOR_TYPE();
+        PROCESSOR_TYPE newProcessor = ScriptableObject.CreateInstance< PROCESSOR_TYPE >();
         m_processorList.Add( newProcessor );
         return newProcessor;
     }
 
-    public void RemoveProcessor( NPVoxNormalProcessor processor )
+    public void DestroyProcessor( NPVoxNormalProcessor processor )
     {
         m_processorList.Remove( processor );
+        ScriptableObject.DestroyImmediate( processor );
     }
 
     public List<NPVoxNormalProcessor> GetProcessors()

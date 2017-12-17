@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEditor;
 
 [System.Serializable]
-public abstract class NPVoxNormalProcessorPass
+public abstract class NPVoxNormalProcessorPass : ScriptableObject
 {
     protected Vector3[] m_normalBuffer;
 
@@ -24,7 +24,7 @@ public abstract class NPVoxNormalProcessorPass
 }
 
 [System.Serializable]
-public abstract class NPVoxNormalProcessor
+public abstract class NPVoxNormalProcessor : ScriptableObject
 {
     protected readonly float GUITabWidth = 40.0f;
 
@@ -63,6 +63,16 @@ public abstract class NPVoxNormalProcessor
         {
             outNormals = inNormals;
         }
+    }
+
+    public void OnDestroy()
+    {
+        foreach( NPVoxNormalProcessorPass pass in m_passes )
+        {
+            ScriptableObject.DestroyImmediate( pass );
+        }
+
+        m_passes.Clear();
     }
 
     public virtual void OnGUI()

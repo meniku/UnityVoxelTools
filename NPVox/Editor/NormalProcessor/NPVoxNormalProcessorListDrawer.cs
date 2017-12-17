@@ -132,7 +132,7 @@ public class NPVoxNormalProcessorListDrawer : PropertyDrawer
 
                 if ( GUILayout.Button( "Remove" ) )
                 {
-                    processorList.RemoveProcessor( processor );
+                    processorList.DestroyProcessor( processor );
                     break;
                 }
 

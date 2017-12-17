@@ -176,7 +176,11 @@ public class NPVoxNormalProcessor_Voxel : NPVoxNormalProcessor
 
     public NPVoxNormalProcessor_Voxel()
     {
-        m_passes.Add( new NPVoxNormalProcessorPass_Voxel() );
+    }
+
+    public void OnEnable()
+    {
+        m_passes.Add( ScriptableObject.CreateInstance<NPVoxNormalProcessorPass_Voxel>() );
     }
 
     public override void OneTimeInit()
