@@ -15,7 +15,9 @@ public class NPVoxMeshOutput : NPVoxCompositeProcessorBase<NPVoxIModelFactory, M
     public NPVoxFaces Include = new NPVoxFaces(1, 1, 1, 1, 1, 1);
     public int MinVertexGroups = 1;
     public NPVoxNormalMode[] NormalModePerVoxelGroup = null;
-    public NPVoxNormalProcessorList normalProcessors = null;
+    public NPVoxNormalProcessorList NormalProcessors = null;
+
+    public NPVoxNormalProcessorList[] NormalProcessorsPerVoxelGroup = null;
 
     public void OnEnable()
     {
@@ -24,14 +26,14 @@ public class NPVoxMeshOutput : NPVoxCompositeProcessorBase<NPVoxIModelFactory, M
             NormalVarianceSeed = Random.Range(0, int.MaxValue);
         }
 
-        if ( !normalProcessors )
+        if ( !NormalProcessors )
         {
-            normalProcessors = ScriptableObject.CreateInstance<NPVoxNormalProcessorList>();
-            normalProcessors.hideFlags = HideFlags.HideInHierarchy;
+            NormalProcessors = ScriptableObject.CreateInstance<NPVoxNormalProcessorList>();
+            NormalProcessors.hideFlags = HideFlags.HideInHierarchy;
 
             string path = UnityEditor.AssetDatabase.GetAssetPath( this );
-            UnityEditor.AssetDatabase.AddObjectToAsset( normalProcessors, path );
-            UnityEditor.EditorUtility.SetDirty( normalProcessors );
+            UnityEditor.AssetDatabase.AddObjectToAsset( NormalProcessors, path );
+            UnityEditor.EditorUtility.SetDirty( NormalProcessors );
         }
     }
 

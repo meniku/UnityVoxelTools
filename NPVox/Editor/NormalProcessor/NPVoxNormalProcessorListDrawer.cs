@@ -27,7 +27,7 @@ public class NPVoxNormalProcessorListDrawer : PropertyDrawer
     public override void OnGUI( Rect position, SerializedProperty property, GUIContent label )
     {
         NPVoxMeshOutput target = property.serializedObject.targetObject as NPVoxMeshOutput;
-        NPVoxNormalProcessorList processorList = target.normalProcessors;
+        NPVoxNormalProcessorList processorList = target.NormalProcessors;
 
         EditorGUI.BeginProperty( position, label, property );
         // Customize gui style
