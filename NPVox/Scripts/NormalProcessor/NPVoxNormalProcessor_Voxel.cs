@@ -8,159 +8,155 @@ using System.Text;
 public class NPVoxNormalProcessorPass_Voxel : NPVoxNormalProcessorPass
 {
     public NPVoxNormalMode m_normalMode;
+    
+    private static NPVoxBox voxelNormalNeighbours = new NPVoxBox(new NPVoxCoord(-1, -1, -1), new NPVoxCoord(1, 1, 1));
 
-    public override void Process( NPVoxModel model, NPVoxMeshTempData[] tempdata, Vector3[] inNormals, ref Vector3[] outNormals )
+    public override void Process( NPVoxModel model, NPVoxMeshTempData tempdata, Vector3[] inNormals, ref Vector3[] outNormals )
     {
-        NPVoxBox voxelNormalNeighbours = new NPVoxBox( new NPVoxCoord( -1, -1, -1 ), new NPVoxCoord( 1, 1, 1 ) );
-
-        foreach ( NPVoxMeshTempData data in tempdata )
+        // calculate normals based on present neighbour voxels
+        Vector3 voxelNormal = Vector3.zero;
+        if ( !tempdata.isHidden )
         {
-            // calculate normals based on present neighbour voxels
-            Vector3 voxelNormal = Vector3.zero;
-            if ( !data.isHidden )
+            foreach ( NPVoxCoord offset in voxelNormalNeighbours.Enumerate() )
             {
-                foreach ( NPVoxCoord offset in voxelNormalNeighbours.Enumerate() )
+                NPVoxCoord checkCoord = tempdata.voxCoord + offset;
+                checkCoord = model.LoopCoord( checkCoord, tempdata.loop );
+                if ( !model.HasVoxel( checkCoord ) )
                 {
-                    NPVoxCoord checkCoord = data.voxCoord + offset;
-                    checkCoord = model.LoopCoord( checkCoord, data.loop );
-                    if ( !model.HasVoxel( checkCoord ) )
+                    voxelNormal += NPVoxCoordUtil.ToVector( offset );
+                }
+            }
+            voxelNormal.Normalize();
+        }
+        else
+        {
+            voxelNormal = tempdata.voxelCenter.normalized;
+        }
+
+        for ( int t = 0; t < tempdata.numVertices; t++ )
+        {
+            Vector3 normal = Vector3.zero;
+
+            switch ( m_normalMode)
+            {
+                case NPVoxNormalMode.VOXEL:
+                    normal = voxelNormal;
+
+                    normal = Vector3.zero;
+
+                    if (tempdata.vertexPositionOffsets[ t ].x < 0.0f )
                     {
-                        voxelNormal += NPVoxCoordUtil.ToVector( offset );
+                        if (tempdata.hasLeft && !tempdata.hasForward && !tempdata.hasBack && !tempdata.hasUp && !tempdata.hasDown )
+                        {
+                            normal.x = -1;
+                        }
+                        else
+                        {
+                            normal.x = voxelNormal.x;
+                        }
                     }
-                }
-                voxelNormal.Normalize();
-            }
-            else
-            {
-                voxelNormal = data.voxelCenter.normalized;
-            }
-
-            for ( int t = 0; t < data.numVertices; t++ )
-            {
-                Vector3 normal = Vector3.zero;
-
-                switch ( m_normalMode)
-                {
-                    case NPVoxNormalMode.VOXEL:
-                        normal = voxelNormal;
-
-                        normal = Vector3.zero;
-
-                        if ( data.vertexPositionOffsets[ t ].x < 0.0f )
+                    else if (tempdata.vertexPositionOffsets[ t ].x > 0.0f )
+                    {
+                        if (tempdata.hasRight && !tempdata.hasForward && !tempdata.hasBack && !tempdata.hasUp && !tempdata.hasDown )
                         {
-                            if ( data.hasLeft && !data.hasForward && !data.hasBack && !data.hasUp && !data.hasDown )
-                            {
-                                normal.x = -1;
-                            }
-                            else
-                            {
-                                normal.x = voxelNormal.x;
-                            }
+                            normal.x = 1;
                         }
-                        else if ( data.vertexPositionOffsets[ t ].x > 0.0f )
+                        else
                         {
-                            if ( data.hasRight && !data.hasForward && !data.hasBack && !data.hasUp && !data.hasDown )
-                            {
-                                normal.x = 1;
-                            }
-                            else
-                            {
-                                normal.x = voxelNormal.x;
-                            }
+                            normal.x = voxelNormal.x;
                         }
+                    }
 
-                        if ( data.vertexPositionOffsets[ t ].y < 0.0f )
+                    if (tempdata.vertexPositionOffsets[ t ].y < 0.0f )
+                    {
+                        if (tempdata.hasUp && !tempdata.hasForward && !tempdata.hasBack && !tempdata.hasLeft && !tempdata.hasRight )
                         {
-                            if ( data.hasUp && !data.hasForward && !data.hasBack && !data.hasLeft && !data.hasRight )
-                            {
-                                normal.y = -1;
-                            }
-                            else
-                            {
-                                normal.y = voxelNormal.y;
-                            }
+                            normal.y = -1;
                         }
-                        else if ( data.vertexPositionOffsets[ t ].y > 0.0f )
+                        else
                         {
-                            if ( data.hasDown && !data.hasForward && !data.hasBack && !data.hasLeft && !data.hasRight )
-                            {
-                                normal.y = +1;
-                            }
-                            else
-                            {
-                                normal.y = voxelNormal.y;
-                            }
+                            normal.y = voxelNormal.y;
                         }
-
-                        if ( data.vertexPositionOffsets[ t ].z < 0.0f )
+                    }
+                    else if (tempdata.vertexPositionOffsets[ t ].y > 0.0f )
+                    {
+                        if (tempdata.hasDown && !tempdata.hasForward && !tempdata.hasBack && !tempdata.hasLeft && !tempdata.hasRight )
                         {
-                            if ( data.hasBack && !data.hasLeft && !data.hasRight && !data.hasUp && !data.hasDown )
-                            {
-                                normal.z = -1;
-                            }
-                            else
-                            {
-                                normal.z = voxelNormal.z;
-                            }
+                            normal.y = +1;
                         }
-                        else if ( data.vertexPositionOffsets[ t ].z > 0.0f )
+                        else
                         {
-                            if ( data.hasForward && !data.hasLeft && !data.hasRight && !data.hasUp && !data.hasDown )
-                            {
-                                normal.z = +1;
-                            }
-                            else
-                            {
-                                normal.z = voxelNormal.z;
-                            }
+                            normal.y = voxelNormal.y;
                         }
+                    }
 
-                        if ( Mathf.Abs( normal.x ) < 0.1f && Mathf.Abs( normal.y ) < 0.1f && Mathf.Abs( normal.z ) < 0.1f )
+                    if (tempdata.vertexPositionOffsets[ t ].z < 0.0f )
+                    {
+                        if (tempdata.hasBack && !tempdata.hasLeft && !tempdata.hasRight && !tempdata.hasUp && !tempdata.hasDown )
                         {
-                            // we would like to have full color when we are a stand-alone voxel, however there is no way to do so right now, so we just
-                            // fallback to the centoid normal
-                            normal = data.voxelCenter;
+                            normal.z = -1;
                         }
+                        else
+                        {
+                            normal.z = voxelNormal.z;
+                        }
+                    }
+                    else if (tempdata.vertexPositionOffsets[ t ].z > 0.0f )
+                    {
+                        if (tempdata.hasForward && !tempdata.hasLeft && !tempdata.hasRight && !tempdata.hasUp && !tempdata.hasDown )
+                        {
+                            normal.z = +1;
+                        }
+                        else
+                        {
+                            normal.z = voxelNormal.z;
+                        }
+                    }
 
-                        normal.Normalize();
-                        break;
+                    if ( Mathf.Abs( normal.x ) < 0.1f && Mathf.Abs( normal.y ) < 0.1f && Mathf.Abs( normal.z ) < 0.1f )
+                    {
+                        // we would like to have full color when we are a stand-alone voxel, however there is no way to do so right now, so we just
+                        // fallback to the centoid normal
+                        normal = tempdata.voxelCenter;
+                    }
 
-                    case NPVoxNormalMode.SMOOTH:
-                        normal = Vector3.zero;
+                    normal.Normalize();
+                    break;
 
-                        for ( float xx = -0.5f; xx < 1.0f; xx += 1f )
-                            for ( float yy = -.5f; yy < 1; yy += 1 )
-                                for ( float zz = -.5f; zz < 1; zz += 1 )
+                case NPVoxNormalMode.SMOOTH:
+                    normal = Vector3.zero;
+
+                    for ( float xx = -0.5f; xx < 1.0f; xx += 1f )
+                        for ( float yy = -.5f; yy < 1; yy += 1 )
+                            for ( float zz = -.5f; zz < 1; zz += 1 )
+                            {
+                                sbyte xCoord = ( sbyte ) Mathf.Round(tempdata.vertexPositionOffsets[ t ].x + xx);
+                                sbyte yCoord = ( sbyte ) Mathf.Round(tempdata.vertexPositionOffsets[ t ].y + yy);
+                                sbyte zCoord = ( sbyte ) Mathf.Round(tempdata.vertexPositionOffsets[ t ].z + zz);
+
+                                if ( !model.HasVoxel(tempdata.voxCoord + new NPVoxCoord(( sbyte ) xCoord, ( sbyte ) yCoord, ( sbyte ) zCoord )))
                                 {
-                                    sbyte xCoord = ( sbyte ) Mathf.Round( data.vertexPositionOffsets[ t ].x + xx );
-                                    sbyte yCoord = ( sbyte ) Mathf.Round( data.vertexPositionOffsets[ t ].y + yy );
-                                    sbyte zCoord = ( sbyte ) Mathf.Round( data.vertexPositionOffsets[ t ].z + zz );
 
-                                    if ( !model.HasVoxel( data.voxCoord + new NPVoxCoord( ( sbyte ) xCoord, ( sbyte ) yCoord, ( sbyte ) zCoord ) ) )
-                                    {
-
-                                        normal += new Vector3(
-                                            xx,
-                                            yy,
-                                            zz
-                                        );
-                                    }
+                                    normal += new Vector3(
+                                        xx,
+                                        yy,
+                                        zz
+                                    );
                                 }
+                            }
 
-                        normal.Normalize();
-                        break;
+                    normal.Normalize();
+                    break;
 
-                    case NPVoxNormalMode.FORWARD: normal = Vector3.forward; break;
-                    case NPVoxNormalMode.BACK: normal = Vector3.back; break;
-                    case NPVoxNormalMode.UP: normal = Vector3.up; break;
-                    case NPVoxNormalMode.DOWN: normal = Vector3.down; break;
-                    case NPVoxNormalMode.LEFT: normal = Vector3.left; break;
-                    case NPVoxNormalMode.RIGHT: normal = Vector3.right; break;
+                case NPVoxNormalMode.FORWARD: normal = Vector3.forward; break;
+                case NPVoxNormalMode.BACK: normal = Vector3.back; break;
+                case NPVoxNormalMode.UP: normal = Vector3.up; break;
+                case NPVoxNormalMode.DOWN: normal = Vector3.down; break;
+                case NPVoxNormalMode.LEFT: normal = Vector3.left; break;
+                case NPVoxNormalMode.RIGHT: normal = Vector3.right; break;
 
-                }
-                outNormals[ data.vertexIndexOffsetBegin + t ] = normal;
             }
-
+            outNormals[tempdata.vertexIndexOffsetBegin + t] = normal;
         }
     }
 }

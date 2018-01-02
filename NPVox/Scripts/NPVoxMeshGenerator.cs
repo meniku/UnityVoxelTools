@@ -38,6 +38,24 @@ public class NPVoxMeshTempData
     public NPVoxMeshTempData()
     {
     }
+
+    public bool AppliesToVoxelGroup( int[] groupCandidates )
+    {
+        if ( groupCandidates == null || groupCandidates.Length == 0 )
+        {
+            return true;
+        }
+
+        for ( int i = 0; i < groupCandidates.Length; i++ )
+        {
+            if (vertexGroupIndex == groupCandidates[ i ])
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
 
 public class NPVoxMeshGenerator
@@ -338,13 +356,30 @@ public class NPVoxMeshGenerator
         // elfapo TODO: Test area 'Normal Processor' Move Normal Processor stages to Normal Processor Pipeline: 
 
         NPVoxNormalProcessor_Voxel generator = ScriptableObject.CreateInstance<NPVoxNormalProcessor_Voxel>();
-        generator.NormalMode = NormalMode;
-        generator.Process( model, tmp, normals, out normals );
-
         NPVoxNormalProcessor_Variance processor = ScriptableObject.CreateInstance<NPVoxNormalProcessor_Variance>();
+
         processor.NormalVariance = NormalVariance;
         processor.NormalVarianceSeed = NormalVarianceSeed;
-        processor.Process( model, tmp, normals, out normals );
+
+        if ( NormalModePerVoxelGroup.Length > 0 )
+        {
+            int[] normalGroupIndices = new int[ 1 ];
+
+            for ( int i = 0; i < NormalModePerVoxelGroup.Length; i++ )
+            {
+                normalGroupIndices[0] = i;
+                generator.NormalMode = NormalModePerVoxelGroup[ i ];
+                generator.Process(model, tmp, normals, out normals, normalGroupIndices );
+                processor.Process(model, tmp, normals, out normals, normalGroupIndices );
+            }
+        }
+        else
+        {
+            generator.NormalMode = NormalMode;
+            generator.Process(model, tmp, normals, out normals);
+            processor.Process(model, tmp, normals, out normals);
+        }
+
 
         ScriptableObject.DestroyImmediate( generator );
         ScriptableObject.DestroyImmediate( processor );

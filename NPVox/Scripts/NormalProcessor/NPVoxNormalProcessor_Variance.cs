@@ -10,30 +10,25 @@ public class NPVoxNormalProcessorPass_Variance : NPVoxNormalProcessorPass
     public int m_normalVarianceSeed;
     public Vector3 m_normalVariance;
 
-    public override void Process( NPVoxModel model, NPVoxMeshTempData[] tempdata, Vector3[] inNormals, ref Vector3[] outNormals )
+    public override void Process( NPVoxModel model, NPVoxMeshTempData tempdata, Vector3[] inNormals, ref Vector3[] outNormals )
     {
-        UnityEngine.Random.InitState( m_normalVarianceSeed );
+        // Compute normal variance
+        float rX = UnityEngine.Random.value;
+        float rY = UnityEngine.Random.value;
+        float rZ = UnityEngine.Random.value;
 
-        foreach ( NPVoxMeshTempData data in tempdata )
+        for ( int t = 0; t < tempdata.numVertices; t++ )
         {
-            // Compute normal variance
-            float rX = UnityEngine.Random.value;
-            float rY = UnityEngine.Random.value;
-            float rZ = UnityEngine.Random.value;
-
-            for ( int t = 0; t < data.numVertices; t++ )
+            Vector3 variance = Vector3.zero;
+            if ( m_normalVariance.x != 0 || m_normalVariance.y != 0 || m_normalVariance.z != 0 )
             {
-                Vector3 variance = Vector3.zero;
-                if ( m_normalVariance.x != 0 || m_normalVariance.y != 0 || m_normalVariance.z != 0 )
-                {
-                    variance.x = -m_normalVariance.x * 0.5f + 2 * rX * m_normalVariance.x;
-                    variance.y = -m_normalVariance.y * 0.5f + 2 * rY * m_normalVariance.y;
-                    variance.z = -m_normalVariance.z * 0.5f + 2 * rZ * m_normalVariance.z;
-                }
-
-                outNormals[ data.vertexIndexOffsetBegin + t ] = inNormals[ data.vertexIndexOffsetBegin + t ];
-                outNormals[ data.vertexIndexOffsetBegin + t ] += variance;
+                variance.x = -m_normalVariance.x * 0.5f + 2 * rX * m_normalVariance.x;
+                variance.y = -m_normalVariance.y * 0.5f + 2 * rY * m_normalVariance.y;
+                variance.z = -m_normalVariance.z * 0.5f + 2 * rZ * m_normalVariance.z;
             }
+
+            outNormals[tempdata.vertexIndexOffsetBegin + t ] = inNormals[tempdata.vertexIndexOffsetBegin + t];
+            outNormals[tempdata.vertexIndexOffsetBegin + t ] += variance;
         }
     }
 }
@@ -88,6 +83,8 @@ public class NPVoxNormalProcessor_Variance : NPVoxNormalProcessor
 
     protected override void PerModelInit()
     {
+        UnityEngine.Random.InitState(m_normalVarianceSeed);
+
         m_passVariance.m_normalVariance = NormalVariance;
         m_passVariance.m_normalVarianceSeed = NormalVarianceSeed;
     }

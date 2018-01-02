@@ -6,7 +6,7 @@ using UnityEditor;
 [System.Serializable]
 public abstract class NPVoxNormalProcessorPass : ScriptableObject
 {
-    public abstract void Process( NPVoxModel model, NPVoxMeshTempData[] tempdata, Vector3[] inNormals, ref Vector3[] outNormals );
+    public abstract void Process( NPVoxModel model, NPVoxMeshTempData tempdata, Vector3[] inNormals, ref Vector3[] outNormals );
     
     public bool IsEnabled { get; set; }
 
@@ -42,7 +42,7 @@ public abstract class NPVoxNormalProcessor : ScriptableObject
         }
     }
 
-    public void Process( NPVoxModel model, NPVoxMeshTempData[] tempdata, Vector3[] inNormals, out Vector3[] outNormals )
+    public void Process( NPVoxModel model, NPVoxMeshTempData[] tempdata, Vector3[] inNormals, out Vector3[] outNormals, int[] voxelGroups = null )
     {
         m_normalOutput = new Vector3[inNormals.Length];
         inNormals.CopyTo(m_normalOutput, 0);
@@ -60,7 +60,14 @@ public abstract class NPVoxNormalProcessor : ScriptableObject
         {
             if ( pass.IsEnabled )
             {
-                pass.Process( model, tempdata, m_normalOutput, ref normalBuffer);
+                foreach (NPVoxMeshTempData data in tempdata)
+                {
+                    if ( data.AppliesToVoxelGroup( voxelGroups ) )
+                    {
+                        pass.Process(model, data, m_normalOutput, ref normalBuffer);
+                    }
+                }
+
                 normalBuffer.CopyTo(m_normalOutput, 0);
             }
         }
