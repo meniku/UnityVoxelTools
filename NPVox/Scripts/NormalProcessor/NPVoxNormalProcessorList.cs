@@ -43,7 +43,7 @@ public class NPVoxNormalProcessorList : ScriptableObject
         return newProcessor;
     }
 
-    public NPVoxNormalProcessor AddProcessor<PROCESSOR_TYPE>() where PROCESSOR_TYPE : NPVoxNormalProcessor, new()
+    public PROCESSOR_TYPE AddProcessor<PROCESSOR_TYPE>() where PROCESSOR_TYPE : NPVoxNormalProcessor, new()
     {
         PROCESSOR_TYPE newProcessor = ScriptableObject.CreateInstance< PROCESSOR_TYPE >();
         m_processorList.Add( newProcessor );
