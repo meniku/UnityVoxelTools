@@ -10,10 +10,8 @@ public class NPVoxNormalProcessorPass_Variance : NPVoxNormalProcessorPass
     public int m_normalVarianceSeed;
     public Vector3 m_normalVariance;
 
-    public override void Process( NPVoxModel model, NPVoxMeshTempData[] tempdata, Vector3[] inNormals, out Vector3[] outNormals )
+    public override void Process( NPVoxModel model, NPVoxMeshTempData[] tempdata, Vector3[] inNormals, ref Vector3[] outNormals )
     {
-        m_normalBuffer = new Vector3[ inNormals.Length ];
-
         UnityEngine.Random.InitState( m_normalVarianceSeed );
 
         foreach ( NPVoxMeshTempData data in tempdata )
@@ -33,12 +31,10 @@ public class NPVoxNormalProcessorPass_Variance : NPVoxNormalProcessorPass
                     variance.z = -m_normalVariance.z * 0.5f + 2 * rZ * m_normalVariance.z;
                 }
 
-                m_normalBuffer[ data.vertexIndexOffsetBegin + t ] = inNormals[ data.vertexIndexOffsetBegin + t ];
-                m_normalBuffer[ data.vertexIndexOffsetBegin + t ] += variance;
+                outNormals[ data.vertexIndexOffsetBegin + t ] = inNormals[ data.vertexIndexOffsetBegin + t ];
+                outNormals[ data.vertexIndexOffsetBegin + t ] += variance;
             }
         }
-
-        outNormals = m_normalBuffer;
     }
 }
 

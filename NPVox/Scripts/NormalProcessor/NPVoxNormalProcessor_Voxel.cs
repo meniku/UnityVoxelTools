@@ -7,10 +7,8 @@ using System.Text;
 
 public class NPVoxNormalProcessorPass_Voxel : NPVoxNormalProcessorPass
 {
-    public override void Process( NPVoxModel model, NPVoxMeshTempData[] tempdata, Vector3[] inNormals, out Vector3[] outNormals )
+    public override void Process( NPVoxModel model, NPVoxMeshTempData[] tempdata, Vector3[] inNormals, ref Vector3[] outNormals )
     {
-        m_normalBuffer = new Vector3[ inNormals.Length ];
-
         NPVoxBox voxelNormalNeighbours = new NPVoxBox( new NPVoxCoord( -1, -1, -1 ), new NPVoxCoord( 1, 1, 1 ) );
 
         foreach ( NPVoxMeshTempData data in tempdata )
@@ -158,12 +156,10 @@ public class NPVoxNormalProcessorPass_Voxel : NPVoxNormalProcessorPass
                     case NPVoxNormalMode.RIGHT: normal = Vector3.right; break;
 
                 }
-                m_normalBuffer[ data.vertexIndexOffsetBegin + t ] = normal;
+                outNormals[ data.vertexIndexOffsetBegin + t ] = normal;
             }
 
         }
-
-        outNormals = m_normalBuffer;
     }
 }
 

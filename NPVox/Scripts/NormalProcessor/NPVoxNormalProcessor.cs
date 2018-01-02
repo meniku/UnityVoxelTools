@@ -6,9 +6,7 @@ using UnityEditor;
 [System.Serializable]
 public abstract class NPVoxNormalProcessorPass : ScriptableObject
 {
-    protected Vector3[] m_normalBuffer;
-
-    public abstract void Process( NPVoxModel model, NPVoxMeshTempData[] tempdata, Vector3[] inNormals, out Vector3[] outNormals );
+    public abstract void Process( NPVoxModel model, NPVoxMeshTempData[] tempdata, Vector3[] inNormals, ref Vector3[] outNormals );
     
     public bool IsEnabled { get; set; }
 
@@ -16,16 +14,13 @@ public abstract class NPVoxNormalProcessorPass : ScriptableObject
     {
         IsEnabled = true;
     }
-
-    public Vector3[] GetNormalBuffer()
-    {
-        return m_normalBuffer;
-    }
 }
 
 [System.Serializable]
 public abstract class NPVoxNormalProcessor : ScriptableObject
 {
+    protected Vector3[] m_normalOutput;
+
     protected readonly float GUITabWidth = 40.0f;
 
     protected List<NPVoxNormalProcessorPass> m_passes = null;
@@ -49,7 +44,10 @@ public abstract class NPVoxNormalProcessor : ScriptableObject
 
     public void Process( NPVoxModel model, NPVoxMeshTempData[] tempdata, Vector3[] inNormals, out Vector3[] outNormals )
     {
-        outNormals = null;
+        m_normalOutput = new Vector3[inNormals.Length];
+        inNormals.CopyTo(m_normalOutput, 0);
+
+        Vector3[] normalBuffer = new Vector3[inNormals.Length];
 
         PerModelInit();
 
@@ -62,15 +60,12 @@ public abstract class NPVoxNormalProcessor : ScriptableObject
         {
             if ( pass.IsEnabled )
             {
-                pass.Process( model, tempdata, inNormals, out outNormals );
-                inNormals = outNormals;
+                pass.Process( model, tempdata, m_normalOutput, ref normalBuffer);
+                normalBuffer.CopyTo(m_normalOutput, 0);
             }
         }
 
-        if ( outNormals == null )
-        {
-            outNormals = inNormals;
-        }
+        outNormals = m_normalOutput;
     }
 
     public void OnDestroy()
@@ -103,5 +98,10 @@ public abstract class NPVoxNormalProcessor : ScriptableObject
         }
 
         return pass;
+    }
+    
+    public Vector3[] GetNormalOutput()
+    {
+        return m_normalOutput;
     }
 }
