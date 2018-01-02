@@ -7,6 +7,8 @@ using System.Text;
 
 public class NPVoxNormalProcessorPass_Voxel : NPVoxNormalProcessorPass
 {
+    public NPVoxNormalMode m_normalMode;
+
     public override void Process( NPVoxModel model, NPVoxMeshTempData[] tempdata, Vector3[] inNormals, ref Vector3[] outNormals )
     {
         NPVoxBox voxelNormalNeighbours = new NPVoxBox( new NPVoxCoord( -1, -1, -1 ), new NPVoxCoord( 1, 1, 1 ) );
@@ -37,7 +39,7 @@ public class NPVoxNormalProcessorPass_Voxel : NPVoxNormalProcessorPass
             {
                 Vector3 normal = Vector3.zero;
 
-                switch ( data.normalMode )
+                switch ( m_normalMode)
                 {
                     case NPVoxNormalMode.VOXEL:
                         normal = voxelNormal;
@@ -167,6 +169,9 @@ public class NPVoxNormalProcessorPass_Voxel : NPVoxNormalProcessorPass
 public class NPVoxNormalProcessor_Voxel : NPVoxNormalProcessor
 {
     [SerializeField]
+    private NPVoxNormalProcessorPass_Voxel m_passVoxel;
+
+    [SerializeField]
     private NPVoxNormalMode m_normalMode;
 
     // Processor parameters
@@ -185,11 +190,12 @@ public class NPVoxNormalProcessor_Voxel : NPVoxNormalProcessor
 
     protected override void OneTimeInit()
     {
-        AddPass<NPVoxNormalProcessorPass_Voxel>();
+        m_passVoxel = AddPass<NPVoxNormalProcessorPass_Voxel>();
     }
 
     protected override void PerModelInit()
     {
+        m_passVoxel.m_normalMode = NormalMode;
     }
 
     public override void OnGUI()
