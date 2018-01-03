@@ -364,7 +364,7 @@ public class NPVoxMeshGenerator
         processor.NormalVariance = NormalVariance;
         processor.NormalVarianceSeed = NormalVarianceSeed;
 
-        if ( NormalModePerVoxelGroup.Length > 0 )
+        if ( NormalModePerVoxelGroup != null && NormalModePerVoxelGroup.Length > 0 )
         {
             for ( int i = 0; i < NormalModePerVoxelGroup.Length; i++ )
             {
