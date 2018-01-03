@@ -194,7 +194,7 @@ public class NPVoxNormalProcessor_Voxel : NPVoxNormalProcessor
         m_passVoxel.m_normalMode = NormalMode;
     }
 
-    public override void OnGUI()
+    protected override void OnGUIInternal()
     {
         GUILayout.BeginHorizontal();
         GUILayout.Space( GUITabWidth );

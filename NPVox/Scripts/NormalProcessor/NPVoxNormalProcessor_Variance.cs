@@ -88,17 +88,17 @@ public class NPVoxNormalProcessor_Variance : NPVoxNormalProcessor
         m_passVariance.m_normalVariance = NormalVariance;
         m_passVariance.m_normalVarianceSeed = NormalVarianceSeed;
     }
-
-    public override void OnGUI()
+    
+    protected override void OnGUIInternal()
     {
         GUILayout.BeginHorizontal();
-        GUILayout.Space( GUITabWidth );
-        NormalVariance = EditorGUILayout.Vector3Field( "Normal Variance", NormalVariance );
+        GUILayout.Space(GUITabWidth);
+        NormalVariance = EditorGUILayout.Vector3Field("Normal Variance", NormalVariance);
         GUILayout.EndHorizontal();
 
         GUILayout.BeginHorizontal();
-        GUILayout.Space( GUITabWidth );
-        NormalVarianceSeed = EditorGUILayout.IntField( "Normal Variance Seed", NormalVarianceSeed );
+        GUILayout.Space(GUITabWidth);
+        NormalVarianceSeed = EditorGUILayout.IntField("Normal Variance Seed", NormalVarianceSeed);
         GUILayout.EndHorizontal();
     }
 }

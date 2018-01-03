@@ -17,8 +17,6 @@ public class NPVoxMeshOutput : NPVoxCompositeProcessorBase<NPVoxIModelFactory, M
     public NPVoxNormalMode[] NormalModePerVoxelGroup = null;
     public NPVoxNormalProcessorList NormalProcessors = null;
 
-    public NPVoxNormalProcessorList[] NormalProcessorsPerVoxelGroup = null;
-
     public void OnEnable()
     {
         if (NormalVarianceSeed == -1)

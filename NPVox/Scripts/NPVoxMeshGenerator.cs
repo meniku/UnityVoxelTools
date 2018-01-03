@@ -358,33 +358,36 @@ public class NPVoxMeshGenerator
         NPVoxNormalProcessor_Voxel generator = ScriptableObject.CreateInstance<NPVoxNormalProcessor_Voxel>();
         NPVoxNormalProcessor_Variance processor = ScriptableObject.CreateInstance<NPVoxNormalProcessor_Variance>();
 
+        generator.InitOutputBuffer(normals);
+        processor.InitOutputBuffer(normals);
+
         processor.NormalVariance = NormalVariance;
         processor.NormalVarianceSeed = NormalVarianceSeed;
 
         if ( NormalModePerVoxelGroup.Length > 0 )
         {
-            int[] normalGroupIndices = new int[ 1 ];
-
             for ( int i = 0; i < NormalModePerVoxelGroup.Length; i++ )
             {
-                normalGroupIndices[0] = i;
+                generator.ClearVoxelGroupFilters();
+                generator.AddVoxelGroupFilter(i);
                 generator.NormalMode = NormalModePerVoxelGroup[ i ];
-                generator.Process(model, tmp, normals, out normals, normalGroupIndices );
-                processor.Process(model, tmp, normals, out normals, normalGroupIndices );
+                generator.Process(model, tmp, normals, normals );
             }
+
+            processor.Process(model, tmp, normals, normals);
         }
         else
         {
             generator.NormalMode = NormalMode;
-            generator.Process(model, tmp, normals, out normals);
-            processor.Process(model, tmp, normals, out normals);
+            generator.Process(model, tmp, normals, normals);
+            processor.Process(model, tmp, normals, normals);
         }
 
 
         ScriptableObject.DestroyImmediate( generator );
         ScriptableObject.DestroyImmediate( processor );
 
-        ////////////////////////////////////// NORMAL STAGES ////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////////////////////
 
 
         // shrink arrays as needed

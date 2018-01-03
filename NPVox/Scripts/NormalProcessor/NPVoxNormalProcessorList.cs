@@ -8,10 +8,6 @@ public class NPVoxNormalProcessorList : ScriptableObject
     [SerializeField]
     private List<NPVoxNormalProcessor> m_processorList = null;
 
-    public NPVoxNormalProcessorList()
-    {
-    }
-
     public void OnEnable()
     {
         if ( m_processorList == null )
