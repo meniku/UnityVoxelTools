@@ -10,11 +10,12 @@ using System.Text;
 public class NPVoxNormalProcessorListDrawer : PropertyDrawer
 {
     // Constants
-    private readonly Color s_colorBackgroundGUI = new Color( 0.64f, 0.76f, 1.0f );
+    private readonly Color s_colorBackgroundGUIPrimary = new Color( 0.64f, 0.76f, 1.0f );
+    private readonly Color s_colorBackgroundGUISecondary = new Color(0.9f, 0.9f, 0.95f);
     private readonly Color s_colorForegroundGUI = new Color( 0.0f, 0.0f, 0.2f );
     private readonly float s_widthHeaderLabel = 150.0f;
     private readonly float s_widthExpandButton = 100.0f;
-    private readonly float s_widthUpDownButton = 15.0f;
+    private readonly float s_widthUpDownButton = 10.0f;
     private readonly float s_widthTab = 20.0f;
     private readonly float s_widthMinItemName = 200.0f;
     private readonly float s_verticalSpacePerItem = 5.0f;
@@ -33,7 +34,7 @@ public class NPVoxNormalProcessorListDrawer : PropertyDrawer
         // Customize gui style
         Color previousBGColor = GUI.backgroundColor;
         Color previousFGColor = GUI.contentColor;
-        GUI.backgroundColor = s_colorBackgroundGUI;
+        GUI.backgroundColor = s_colorBackgroundGUIPrimary;
         // GUI.contentColor = s_colorForegroundGUI; // Doesn't seem to work
 
         // Header + Expand / Collapse Button
@@ -114,9 +115,11 @@ public class NPVoxNormalProcessorListDrawer : PropertyDrawer
 
                 GUILayout.Space( 20.0f );
 
-                if ( GUILayout.Button( "View Output" ) )
-                {
+                GUI.backgroundColor = s_colorBackgroundGUISecondary;
 
+                if ( GUILayout.Button( "View" ) )
+                {
+                    // TODO: Implement view window
                 }
                 
                 GUILayout.Space( 20.0f );
@@ -131,13 +134,13 @@ public class NPVoxNormalProcessorListDrawer : PropertyDrawer
                     itemToMoveDown = processor;
                 }
 
-                GUILayout.Space( 20.0f );
-
-                if ( GUILayout.Button( "Remove" ) )
+                if ( GUILayout.Button( "X" , GUILayout.Width(s_widthUpDownButton), GUILayout.ExpandWidth(true) ) )
                 {
                     processorList.DestroyProcessor( processor );
                     break;
                 }
+
+                GUI.backgroundColor = s_colorBackgroundGUIPrimary;
 
                 GUILayout.EndHorizontal();
                 
