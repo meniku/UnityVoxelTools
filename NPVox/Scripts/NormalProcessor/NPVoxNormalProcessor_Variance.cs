@@ -47,16 +47,16 @@ public class NPVoxNormalProcessor_Variance : NPVoxNormalProcessor
     private Vector3 m_normalVariance;
 
     [SerializeField]
-    private int m_normalVarianceSeed;
+    private int m_normalVarianceSeed = -1;
     
     public override object Clone()
     {
         NPVoxNormalProcessor_Variance clone = ScriptableObject.CreateInstance<NPVoxNormalProcessor_Variance>();
         clone.m_normalVariance = m_normalVariance;
-        clone.m_normalVarianceSeed = m_normalVarianceSeed;
+        clone.m_normalVarianceSeed = UnityEngine.Random.Range( 0, int.MaxValue );
         
         clone.m_passVariance.m_normalVariance = m_passVariance.m_normalVariance;
-        clone.m_passVariance.m_normalVarianceSeed = m_passVariance.m_normalVarianceSeed;
+        clone.m_passVariance.m_normalVarianceSeed = clone.m_normalVarianceSeed;
         
         foreach ( int filter in m_voxelGroupFilter )
         {
@@ -94,6 +94,11 @@ public class NPVoxNormalProcessor_Variance : NPVoxNormalProcessor
     // functions
     protected override void OneTimeInit()
     {
+        if ( m_normalVarianceSeed == -1 )
+        {
+            m_normalVarianceSeed = UnityEngine.Random.Range( 0, int.MaxValue );
+        }
+
         m_passVariance = AddPass<NPVoxNormalProcessorPass_Variance>();
         m_passNormalize = AddPass<NPVoxNormalProcessorPass_Normalize>();
     }

@@ -8,6 +8,9 @@ public class NPVoxNormalProcessorList : ScriptableObject, ICloneable, ISerializa
     [SerializeField]
     private List<NPVoxNormalProcessor> m_processorList = null;
 
+    [HideInInspector]
+    public bool RequiresMigration = true;
+
     public void OnBeforeSerialize()
     {
     }

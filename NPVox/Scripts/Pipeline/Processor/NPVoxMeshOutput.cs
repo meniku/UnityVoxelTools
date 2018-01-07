@@ -23,42 +23,11 @@ public class NPVoxMeshOutput : NPVoxCompositeProcessorBase<NPVoxIModelFactory, M
         {
             NormalVarianceSeed = Random.Range(0, int.MaxValue);
         }
-
-
+        
         if (NormalProcessors == null)
         {
             NormalProcessors = ScriptableObject.CreateInstance<NPVoxNormalProcessorList>();
         }
-        /*
-        string path = UnityEditor.AssetDatabase.GetAssetPath(this);
-
-        // Create default processors
-        if ( NormalProcessors == null )
-        {
-            NormalProcessors = ScriptableObject.CreateInstance<NPVoxNormalProcessorList>();
-            NormalProcessors.hideFlags = HideFlags.HideInHierarchy;
-
-            if (NormalModePerVoxelGroup != null && NormalModePerVoxelGroup.Length > 0)
-            {
-                for (int i = 0; i < NormalModePerVoxelGroup.Length; i++)
-                {
-                    NPVoxNormalProcessor_Voxel processorVoxel = NormalProcessors.AddProcessor<NPVoxNormalProcessor_Voxel>();
-                    processorVoxel.NormalMode = NormalModePerVoxelGroup[i];
-                    processorVoxel.AddVoxelGroupFilter(i);
-                }
-            }
-            else
-            {
-                NPVoxNormalProcessor_Voxel processorVoxel = NormalProcessors.AddProcessor<NPVoxNormalProcessor_Voxel>();
-                processorVoxel.NormalMode = NormalMode;
-            }
-
-            NPVoxNormalProcessor_Variance processorVariance = NormalProcessors.AddProcessor<NPVoxNormalProcessor_Variance>();
-            processorVariance.NormalVarianceSeed = NormalVarianceSeed;
-            processorVariance.NormalVariance = NormalVariance;
-
-            NormalProcessors.AddToAsset(path); 
-        }*/
     }
 
     public void OnDisable()
@@ -177,6 +146,7 @@ public class NPVoxMeshOutput : NPVoxCompositeProcessorBase<NPVoxIModelFactory, M
         copy.NormalVarianceSeed =  Random.Range(0, int.MaxValue);
         
         copy.NormalProcessors = NormalProcessors.Clone() as NPVoxNormalProcessorList;
+        copy.NormalProcessors.RequiresMigration = false;
 
         return copy;
     }
@@ -190,8 +160,35 @@ public class NPVoxMeshOutput : NPVoxCompositeProcessorBase<NPVoxIModelFactory, M
     public override void Import()
     {
         base.Import();
-        string strAssetPath = UnityEditor.AssetDatabase.GetAssetPath(NormalProcessors);
 
-        strAssetPath = UnityEditor.AssetDatabase.GetAssetPath(NormalProcessors);
+        if ( NormalProcessors && NormalProcessors.RequiresMigration )
+        {
+            NormalProcessors.hideFlags = HideFlags.HideInHierarchy;
+
+            if ( NormalModePerVoxelGroup != null && NormalModePerVoxelGroup.Length > 0 )
+            {
+                for ( int i = 0; i < NormalModePerVoxelGroup.Length; i++ )
+                {
+                    NPVoxNormalProcessor_Voxel processorVoxel = NormalProcessors.AddProcessor<NPVoxNormalProcessor_Voxel>();
+                    processorVoxel.NormalMode = NormalModePerVoxelGroup[ i ];
+                    processorVoxel.AddVoxelGroupFilter( i );
+                }
+            }
+            else
+            {
+                NPVoxNormalProcessor_Voxel processorVoxel = NormalProcessors.AddProcessor<NPVoxNormalProcessor_Voxel>();
+                processorVoxel.NormalMode = NormalMode;
+            }
+
+            NPVoxNormalProcessor_Variance processorVariance = NormalProcessors.AddProcessor<NPVoxNormalProcessor_Variance>();
+            processorVariance.NormalVarianceSeed = NormalVarianceSeed;
+            processorVariance.NormalVariance = NormalVariance;
+
+            NormalProcessors.AddToAsset( UnityEditor.AssetDatabase.GetAssetPath( this ) );
+
+            UnityEditor.EditorUtility.SetDirty( NormalProcessors );
+
+            NormalProcessors.RequiresMigration = false;
+        }
     }
 }
