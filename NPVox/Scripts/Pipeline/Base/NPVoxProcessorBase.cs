@@ -173,6 +173,8 @@ abstract public class NPVoxProcessorBase<PRODUCT> : ScriptableObject, NPipeIImpo
         return copy;
     }
 
+    virtual public void IncludeSubAssets(string path) {}
+
 #if UNITY_EDITOR
     virtual public bool DrawInspector(NPipeEditFlags flags)
     {

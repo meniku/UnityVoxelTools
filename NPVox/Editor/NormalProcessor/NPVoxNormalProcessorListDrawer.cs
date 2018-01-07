@@ -96,7 +96,13 @@ public class NPVoxNormalProcessorListDrawer : PropertyDrawer
                 System.Type processorClass = processorClasses[ processorKeys[ m_indexPopupAddProcessor ] ];
                 if ( processorClass != null )
                 {
-                    processorList.AddProcessor( processorClass );
+                    Debug.Log("Asset Path 1: " + UnityEditor.AssetDatabase.GetAssetPath(target));
+                    if (UnityEditor.AssetDatabase.GetAssetPath(processorList).Length == 0)
+                    {
+                        target.IncludeSubAssets(UnityEditor.AssetDatabase.GetAssetPath(target));
+                    }
+                    processorList.AddProcessor(processorClass)
+                        .AddToAsset(UnityEditor.AssetDatabase.GetAssetPath(target));
                 }
             }
 

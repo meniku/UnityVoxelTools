@@ -10,6 +10,7 @@ public interface NPipeIImportable
     string GetTypeName();
     string GetInstanceName();
     UnityEngine.Object Clone();
+    void IncludeSubAssets(string path); 
 
 #if UNITY_EDITOR
     double GetLastInvalidatedTime();

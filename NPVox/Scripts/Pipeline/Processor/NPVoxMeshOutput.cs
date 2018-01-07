@@ -24,15 +24,19 @@ public class NPVoxMeshOutput : NPVoxCompositeProcessorBase<NPVoxIModelFactory, M
             NormalVarianceSeed = Random.Range(0, int.MaxValue);
         }
 
+
+        if (NormalProcessors == null)
+        {
+            NormalProcessors = ScriptableObject.CreateInstance<NPVoxNormalProcessorList>();
+        }
+        /*
+        string path = UnityEditor.AssetDatabase.GetAssetPath(this);
+
         // Create default processors
         if ( NormalProcessors == null )
         {
             NormalProcessors = ScriptableObject.CreateInstance<NPVoxNormalProcessorList>();
             NormalProcessors.hideFlags = HideFlags.HideInHierarchy;
-
-            string path = UnityEditor.AssetDatabase.GetAssetPath(this);
-            UnityEditor.AssetDatabase.AddObjectToAsset(NormalProcessors, path);
-            UnityEditor.EditorUtility.SetDirty(NormalProcessors);
 
             if (NormalModePerVoxelGroup != null && NormalModePerVoxelGroup.Length > 0)
             {
@@ -52,7 +56,14 @@ public class NPVoxMeshOutput : NPVoxCompositeProcessorBase<NPVoxIModelFactory, M
             NPVoxNormalProcessor_Variance processorVariance = NormalProcessors.AddProcessor<NPVoxNormalProcessor_Variance>();
             processorVariance.NormalVarianceSeed = NormalVarianceSeed;
             processorVariance.NormalVariance = NormalVariance;
-        }
+
+            NormalProcessors.AddToAsset(path); 
+        }*/
+    }
+
+    public void OnDisable()
+    {
+        
     }
 
     override protected Mesh CreateProduct(Mesh reuse = null)
@@ -74,7 +85,7 @@ public class NPVoxMeshOutput : NPVoxCompositeProcessorBase<NPVoxIModelFactory, M
                 Debug.LogWarning("Source Model is not valid");
                 return mesh;
             }
-            NPVoxMeshGenerator.CreateMesh(model, mesh, VoxelSize, NormalVariance, NormalVarianceSeed, Optimization, NormalMode, BloodColorIndex, Loop, Cutout, Include, MinVertexGroups, NormalModePerVoxelGroup);
+            NPVoxMeshGenerator.CreateMesh(model, mesh, VoxelSize, NormalVariance, NormalVarianceSeed, Optimization, NormalMode, BloodColorIndex, Loop, Cutout, Include, MinVertexGroups, NormalModePerVoxelGroup, NormalProcessors);
             mesh.name = "zzz Mesh";
             return mesh;
         }
@@ -164,8 +175,23 @@ public class NPVoxMeshOutput : NPVoxCompositeProcessorBase<NPVoxIModelFactory, M
     {
         NPVoxMeshOutput copy = (NPVoxMeshOutput)base.Clone();
         copy.NormalVarianceSeed =  Random.Range(0, int.MaxValue);
+        
+        copy.NormalProcessors = NormalProcessors.Clone() as NPVoxNormalProcessorList;
+
         return copy;
     }
 
 
+    public override void IncludeSubAssets(string path)
+    {
+        NormalProcessors.AddToAsset(path);
+    }
+
+    public override void Import()
+    {
+        base.Import();
+        string strAssetPath = UnityEditor.AssetDatabase.GetAssetPath(NormalProcessors);
+
+        strAssetPath = UnityEditor.AssetDatabase.GetAssetPath(NormalProcessors);
+    }
 }

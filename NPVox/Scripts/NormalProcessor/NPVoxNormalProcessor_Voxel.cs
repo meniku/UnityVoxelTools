@@ -184,6 +184,20 @@ public class NPVoxNormalProcessor_Voxel : NPVoxNormalProcessor
     {
     }
 
+    public override object Clone()
+    {
+        NPVoxNormalProcessor_Voxel clone = ScriptableObject.CreateInstance<NPVoxNormalProcessor_Voxel>();
+        clone.m_normalMode = m_normalMode;
+        clone.m_passVoxel.m_normalMode = m_passVoxel.m_normalMode;
+
+        foreach (int filter in m_voxelGroupFilter)
+        {
+            clone.m_voxelGroupFilter.Add(filter);
+        }
+
+        return clone;
+    }
+
     protected override void OneTimeInit()
     {
         m_passVoxel = AddPass<NPVoxNormalProcessorPass_Voxel>();

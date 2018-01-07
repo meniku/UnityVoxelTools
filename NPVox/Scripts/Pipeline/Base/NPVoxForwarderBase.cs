@@ -95,6 +95,8 @@ abstract public class NPVoxForwarderBase<SOURCE_FACTORY, PRODUCT> : ScriptableOb
         return copy;
     }
 
+    public virtual void IncludeSubAssets(string path) {}
+
 #if UNITY_EDITOR
     virtual public bool DrawInspector(NPipeEditFlags flags)
     {

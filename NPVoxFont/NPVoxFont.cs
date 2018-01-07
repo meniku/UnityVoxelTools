@@ -75,6 +75,8 @@ public class NPVoxFont : ScriptableObject, NPipeIImportable
         return Instantiate(this);
     }
 
+    public virtual void IncludeSubAssets(string path) {}
+
     #if UNITY_EDITOR
     public double GetLastInvalidatedTime()
     {

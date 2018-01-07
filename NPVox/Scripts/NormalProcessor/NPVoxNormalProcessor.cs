@@ -7,27 +7,27 @@ using UnityEditor;
 public abstract class NPVoxNormalProcessorPass : ScriptableObject
 {
     public abstract void Process( NPVoxModel model, NPVoxMeshTempData tempdata, Vector3[] inNormals, ref Vector3[] outNormals );
-    
-    public bool IsEnabled { get; set; }
-
-    public NPVoxNormalProcessorPass()
-    {
-        IsEnabled = true;
-    }
 }
 
 [System.Serializable]
-public abstract class NPVoxNormalProcessor : ScriptableObject
+public abstract class NPVoxNormalProcessor : ScriptableObject, ICloneable
 {
-    protected Vector3[] m_normalOutput;
-
-    public List<NPVoxNormalProcessorPass> m_passes = null;
-
     protected readonly float GUITabWidth = 40.0f;
 
+    protected Vector3[] m_normalOutput;
+
     [SerializeField]
-    public List<int> m_voxelGroupFilter;
-    
+    protected List<NPVoxNormalProcessorPass> m_passes = null;
+
+    [SerializeField]
+    protected List<int> m_voxelGroupFilter;
+
+    public List<NPVoxNormalProcessorPass> Passes
+    {
+        get { return m_passes; }
+        set { m_passes = value; }
+    }
+
     public NPVoxNormalProcessor()
     {
     }
@@ -46,8 +46,9 @@ public abstract class NPVoxNormalProcessor : ScriptableObject
         if ( m_passes == null )
         {
             m_passes = new List<NPVoxNormalProcessorPass>();
-            OneTimeInit();
         }
+
+        OneTimeInit();
     }
 
     public void InitOutputBuffer( Vector3[] inNormals )
@@ -77,17 +78,14 @@ public abstract class NPVoxNormalProcessor : ScriptableObject
 
         foreach ( NPVoxNormalProcessorPass pass in m_passes )
         {
-            if ( pass.IsEnabled )
+            foreach (NPVoxMeshTempData data in tempdata)
             {
-                foreach (NPVoxMeshTempData data in tempdata)
+                if (data.AppliesToVoxelGroup(m_voxelGroupFilter.ToArray()))
                 {
-                    if (data.AppliesToVoxelGroup(m_voxelGroupFilter.ToArray()))
+                    pass.Process(model, data, m_normalOutput, ref normalBuffer);
+                    for( int i = 0; i < data.numVertices; i++ )
                     {
-                        pass.Process(model, data, m_normalOutput, ref normalBuffer);
-                        for( int i = 0; i < data.numVertices; i++ )
-                        {
-                            m_normalOutput[data.vertexIndexOffsetBegin + i] = normalBuffer[data.vertexIndexOffsetBegin + i];
-                        }
+                        m_normalOutput[data.vertexIndexOffsetBegin + i] = normalBuffer[data.vertexIndexOffsetBegin + i];
                     }
                 }
             }
@@ -158,13 +156,6 @@ public abstract class NPVoxNormalProcessor : ScriptableObject
 
         pass.hideFlags = HideFlags.HideInHierarchy;
 
-        string path = UnityEditor.AssetDatabase.GetAssetPath( this );
-        if ( path.Length > 0 )
-        {
-            UnityEditor.AssetDatabase.AddObjectToAsset( pass, path );
-            UnityEditor.EditorUtility.SetDirty( pass );
-        }
-
         return pass;
     }
     
@@ -189,4 +180,22 @@ public abstract class NPVoxNormalProcessor : ScriptableObject
     {
         m_voxelGroupFilter.Clear();
     }
+
+    public void AddToAsset( string path )
+    {
+        if (path.Length > 0)
+        {
+            UnityEditor.AssetDatabase.AddObjectToAsset(this, path);
+
+            foreach ( NPVoxNormalProcessorPass pass in m_passes )
+            {
+                UnityEditor.AssetDatabase.AddObjectToAsset(pass, path);
+                UnityEditor.EditorUtility.SetDirty(pass);
+            }
+            
+            UnityEditor.EditorUtility.SetDirty(this);
+        }
+    }
+
+    public abstract object Clone();
 }

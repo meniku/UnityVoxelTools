@@ -451,6 +451,7 @@ public class NPipelineUtils
         NPipeIImportable importable = obj as NPipeIImportable;
         obj.name = importable.GetTypeName();
         AssetDatabase.AddObjectToAsset(obj, path);
+        importable.IncludeSubAssets(path);
         UnityEditor.EditorUtility.SetDirty(pipe as UnityEngine.Object);
         // AssetDatabase.SaveAssets();
         // AssetDatabase.Refresh();

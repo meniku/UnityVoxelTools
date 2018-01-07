@@ -73,7 +73,8 @@ public class NPVoxMeshGenerator
         NPVoxFaces cutout = null, 
         NPVoxFaces include = null,
         int MinVertexGroups = 1,
-        NPVoxNormalMode[] NormalModePerVoxelGroup = null
+        NPVoxNormalMode[] NormalModePerVoxelGroup = null,
+        NPVoxNormalProcessorList normalProcessors = null
     )
     {
         bool hasVoxelGroups = model.HasVoxelGroups();
@@ -364,14 +365,14 @@ public class NPVoxMeshGenerator
         processor.NormalVariance = NormalVariance;
         processor.NormalVarianceSeed = NormalVarianceSeed;
 
-        if ( NormalModePerVoxelGroup != null && NormalModePerVoxelGroup.Length > 0 )
+        if (NormalModePerVoxelGroup != null && NormalModePerVoxelGroup.Length > 0)
         {
-            for ( int i = 0; i < NormalModePerVoxelGroup.Length; i++ )
+            for (int i = 0; i < NormalModePerVoxelGroup.Length; i++)
             {
                 generator.ClearVoxelGroupFilters();
                 generator.AddVoxelGroupFilter(i);
-                generator.NormalMode = NormalModePerVoxelGroup[ i ];
-                generator.Process(model, tmp, normals, normals );
+                generator.NormalMode = NormalModePerVoxelGroup[i];
+                generator.Process(model, tmp, normals, normals);
             }
 
             processor.Process(model, tmp, normals, normals);
@@ -384,8 +385,13 @@ public class NPVoxMeshGenerator
         }
 
 
-        ScriptableObject.DestroyImmediate( generator );
-        ScriptableObject.DestroyImmediate( processor );
+        ScriptableObject.DestroyImmediate(generator);
+        ScriptableObject.DestroyImmediate(processor);
+
+        //if ( normalProcessors != null )
+        //{
+        //    normalProcessors.Run(model, tmp, normals, normals);
+        //}
 
         //////////////////////////////////////////////////////////////////////////////////////////////
 

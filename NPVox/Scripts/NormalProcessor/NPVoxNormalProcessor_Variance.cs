@@ -48,6 +48,23 @@ public class NPVoxNormalProcessor_Variance : NPVoxNormalProcessor
 
     [SerializeField]
     private int m_normalVarianceSeed;
+    
+    public override object Clone()
+    {
+        NPVoxNormalProcessor_Variance clone = ScriptableObject.CreateInstance<NPVoxNormalProcessor_Variance>();
+        clone.m_normalVariance = m_normalVariance;
+        clone.m_normalVarianceSeed = m_normalVarianceSeed;
+        
+        clone.m_passVariance.m_normalVariance = m_passVariance.m_normalVariance;
+        clone.m_passVariance.m_normalVarianceSeed = m_passVariance.m_normalVarianceSeed;
+        
+        foreach ( int filter in m_voxelGroupFilter )
+        {
+            clone.m_voxelGroupFilter.Add(filter);
+        }
+        
+        return clone;
+    }
 
     // Processor parameters
     public Vector3 NormalVariance
