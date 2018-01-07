@@ -8,6 +8,14 @@ public class NPVoxNormalProcessorList : ScriptableObject, ICloneable, ISerializa
     [SerializeField]
     private List<NPVoxNormalProcessor> m_processorList = null;
 
+    public void OnBeforeSerialize()
+    {
+    }
+
+    public void OnAfterDeserialize()
+    {
+    }
+
     public void OnEnable()
     {
         if ( m_processorList == null )
@@ -63,10 +71,7 @@ public class NPVoxNormalProcessorList : ScriptableObject, ICloneable, ISerializa
     {
         m_processorList.Remove( processor );
 
-        foreach(NPVoxNormalProcessorPass pass in processor.Passes)
-        {
-            ScriptableObject.DestroyImmediate(pass, true);
-        }
+        processor.Passes.Clear();
 
         ScriptableObject.DestroyImmediate( processor, true );
         UnityEditor.EditorUtility.SetDirty( this );
@@ -117,13 +122,5 @@ public class NPVoxNormalProcessorList : ScriptableObject, ICloneable, ISerializa
             clone.m_processorList.Add(processor.Clone() as NPVoxNormalProcessor);
         }
         return clone;
-    }
-
-    public void OnBeforeSerialize()
-    {
-    }
-
-    public void OnAfterDeserialize()
-    {
     }
 }

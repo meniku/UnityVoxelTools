@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
-[System.Serializable]
-public abstract class NPVoxNormalProcessorPass : ScriptableObject
+public abstract class NPVoxNormalProcessorPass
 {
     public abstract void Process( NPVoxModel model, NPVoxMeshTempData tempdata, Vector3[] inNormals, ref Vector3[] outNormals );
 }
@@ -15,8 +14,7 @@ public abstract class NPVoxNormalProcessor : ScriptableObject, ICloneable
     protected readonly float GUITabWidth = 40.0f;
 
     protected Vector3[] m_normalOutput;
-
-    [SerializeField]
+    
     protected List<NPVoxNormalProcessorPass> m_passes = null;
 
     [SerializeField]
@@ -42,11 +40,8 @@ public abstract class NPVoxNormalProcessor : ScriptableObject, ICloneable
         {
             m_voxelGroupFilter = new List<int>();
         }
-
-        if ( m_passes == null )
-        {
-            m_passes = new List<NPVoxNormalProcessorPass>();
-        }
+        
+        m_passes = new List<NPVoxNormalProcessorPass>();
 
         OneTimeInit();
     }
@@ -96,11 +91,6 @@ public abstract class NPVoxNormalProcessor : ScriptableObject, ICloneable
 
     public void OnDestroy()
     {
-        foreach( NPVoxNormalProcessorPass pass in m_passes )
-        {
-            ScriptableObject.DestroyImmediate( pass, true );
-        }
-
         m_passes.Clear();
     }
 
@@ -148,14 +138,12 @@ public abstract class NPVoxNormalProcessor : ScriptableObject, ICloneable
 
     protected abstract void OnGUIInternal();
 
-    protected PASS_TYPE AddPass<PASS_TYPE>() where PASS_TYPE : NPVoxNormalProcessorPass
+    protected PASS_TYPE AddPass<PASS_TYPE>() where PASS_TYPE : NPVoxNormalProcessorPass, new()
     {
-        PASS_TYPE pass = ScriptableObject.CreateInstance<PASS_TYPE>();
+        PASS_TYPE pass = new PASS_TYPE();
 
         m_passes.Add( pass );
-
-        pass.hideFlags = HideFlags.HideInHierarchy;
-
+        
         return pass;
     }
     
@@ -186,13 +174,6 @@ public abstract class NPVoxNormalProcessor : ScriptableObject, ICloneable
         if (path.Length > 0)
         {
             UnityEditor.AssetDatabase.AddObjectToAsset(this, path);
-
-            foreach ( NPVoxNormalProcessorPass pass in m_passes )
-            {
-                UnityEditor.AssetDatabase.AddObjectToAsset(pass, path);
-                UnityEditor.EditorUtility.SetDirty(pass);
-            }
-            
             UnityEditor.EditorUtility.SetDirty(this);
         }
     }
