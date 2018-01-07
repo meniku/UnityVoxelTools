@@ -356,42 +356,42 @@ public class NPVoxMeshGenerator
         ////////////////////////////////////// NORMAL STAGES ////////////////////////////////////////
         // elfapo TODO: Test area 'Normal Processor' Move Normal Processor stages to Normal Processor Pipeline: 
 
-        NPVoxNormalProcessor_Voxel generator = ScriptableObject.CreateInstance<NPVoxNormalProcessor_Voxel>();
-        NPVoxNormalProcessor_Variance processor = ScriptableObject.CreateInstance<NPVoxNormalProcessor_Variance>();
+        //NPVoxNormalProcessor_Voxel generator = ScriptableObject.CreateInstance<NPVoxNormalProcessor_Voxel>();
+        //NPVoxNormalProcessor_Variance processor = ScriptableObject.CreateInstance<NPVoxNormalProcessor_Variance>();
 
-        generator.InitOutputBuffer(normals);
-        processor.InitOutputBuffer(normals);
+        //generator.InitOutputBuffer(normals);
+        //processor.InitOutputBuffer(normals);
 
-        processor.NormalVariance = NormalVariance;
-        processor.NormalVarianceSeed = NormalVarianceSeed;
+        //processor.NormalVariance = NormalVariance;
+        //processor.NormalVarianceSeed = NormalVarianceSeed;
 
-        if (NormalModePerVoxelGroup != null && NormalModePerVoxelGroup.Length > 0)
-        {
-            for (int i = 0; i < NormalModePerVoxelGroup.Length; i++)
-            {
-                generator.ClearVoxelGroupFilters();
-                generator.AddVoxelGroupFilter(i);
-                generator.NormalMode = NormalModePerVoxelGroup[i];
-                generator.Process(model, tmp, normals, normals);
-            }
-
-            processor.Process(model, tmp, normals, normals);
-        }
-        else
-        {
-            generator.NormalMode = NormalMode;
-            generator.Process(model, tmp, normals, normals);
-            processor.Process(model, tmp, normals, normals);
-        }
-
-
-        ScriptableObject.DestroyImmediate(generator);
-        ScriptableObject.DestroyImmediate(processor);
-
-        //if ( normalProcessors != null )
+        //if (NormalModePerVoxelGroup != null && NormalModePerVoxelGroup.Length > 0)
         //{
-        //    normalProcessors.Run(model, tmp, normals, normals);
+        //    for (int i = 0; i < NormalModePerVoxelGroup.Length; i++)
+        //    {
+        //        generator.ClearVoxelGroupFilters();
+        //        generator.AddVoxelGroupFilter(i);
+        //        generator.NormalMode = NormalModePerVoxelGroup[i];
+        //        generator.Process(model, tmp, normals, normals);
+        //    }
+
+        //    processor.Process(model, tmp, normals, normals);
         //}
+        //else
+        //{
+        //    generator.NormalMode = NormalMode;
+        //    generator.Process(model, tmp, normals, normals);
+        //    processor.Process(model, tmp, normals, normals);
+        //}
+
+
+        //ScriptableObject.DestroyImmediate(generator);
+        //ScriptableObject.DestroyImmediate(processor);
+
+        if ( normalProcessors != null )
+        {
+            normalProcessors.Run( model, tmp, normals, normals );
+        }
 
         //////////////////////////////////////////////////////////////////////////////////////////////
 
