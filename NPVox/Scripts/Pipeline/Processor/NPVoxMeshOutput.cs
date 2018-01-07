@@ -155,12 +155,14 @@ public class NPVoxMeshOutput : NPVoxCompositeProcessorBase<NPVoxIModelFactory, M
     public override void IncludeSubAssets(string path)
     {
         NormalProcessors.AddToAsset(path);
+        NormalProcessors.RequiresMigration = false;
     }
 
     public override void Import()
     {
         base.Import();
 
+        // Normal processor migration code
         if ( NormalProcessors && NormalProcessors.RequiresMigration )
         {
             NormalProcessors.hideFlags = HideFlags.HideInHierarchy;
