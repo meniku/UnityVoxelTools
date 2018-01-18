@@ -33,6 +33,8 @@ public class NPVoxMeshTempData
     public NPVoxFaces include = null;
     public NPVoxFaces cutout = null;
 
+    public NPVoxToUnity voxToUnity = null;
+
     public NPVoxNormalMode normalMode = NPVoxNormalMode.SMOOTH;
 
     public NPVoxMeshTempData()
@@ -145,6 +147,8 @@ public class NPVoxMeshGenerator
                 // Compute voxel center
                 tmp[ voxIndex ].voxelCenter = npVoxToUnity.ToUnityPosition(voxCoord) + cutoutOffset;
                 tmp[ voxIndex ].voxCoord = voxCoord;
+
+                tmp[ voxIndex ].voxToUnity = npVoxToUnity;
 
                 // Determine vertex group index
                 tmp[ voxIndex ].vertexGroupIndex = 0;

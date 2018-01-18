@@ -157,8 +157,8 @@ MonoBehaviour:
     SelfObject: {fileID: 4363834}
     storageMode: 2
   isValid: 1
+  isTemplate: 0
   InstanceName: 
-  source: {fileID: 0}
   input: {fileID: 11485864}
   VoxelSize: {x: 0.125, y: 0.125, z: 0.125}
   NormalVariance: {x: 0, y: 0, z: 0}
@@ -187,6 +187,9 @@ MonoBehaviour:
     Down: 1
     Forward: 1
     Back: 1
+  MinVertexGroups: 1
+  NormalModePerVoxelGroup: 
+  NormalProcessors: {fileID: 114923091276628142}
 --- !u!114 &11418636
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -205,6 +208,7 @@ MonoBehaviour:
     SelfObject: {fileID: 0}
     storageMode: 0
   isValid: 1
+  isTemplate: 0
   InstanceName: 
   VoxModelUUID: 
 --- !u!114 &11485864
@@ -225,8 +229,8 @@ MonoBehaviour:
     SelfObject: {fileID: 0}
     storageMode: 0
   isValid: 1
+  isTemplate: 0
   InstanceName: 
-  source: {fileID: 0}
   input: {fileID: 11418636}
   XAxis:
     x: 1
@@ -240,3 +244,44 @@ MonoBehaviour:
     x: 0
     y: 0
     z: -1
+--- !u!114 &114236683151874608
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 509be3b778e522b4e9898029387ae765, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_voxelGroupFilter: 
+  m_normalVariance: {x: 0, y: 0, z: 0}
+  m_normalVarianceSeed: 0
+--- !u!114 &114800978402890314
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4a2d5700d716e54fb68f917b3beb9d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_voxelGroupFilter: 
+  m_normalMode: 2
+--- !u!114 &114923091276628142
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac02ac01e26282f4dafab5e4d80e319c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_processorList:
+  - {fileID: 114800978402890314}
+  - {fileID: 114236683151874608}
