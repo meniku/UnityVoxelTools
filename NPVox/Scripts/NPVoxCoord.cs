@@ -118,5 +118,9 @@ public struct NPVoxCoord
     {
         return x == other.X && z == other.z && y == other.y;
     }
-
+    
+    public Vector3 ToVector3()
+    {
+        return new Vector3(x, y, z);
+    }
 }

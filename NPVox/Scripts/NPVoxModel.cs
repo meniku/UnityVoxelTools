@@ -396,6 +396,31 @@ public class NPVoxModel : ScriptableObject
         }
     }
 
+    public NPVoxBox BoundingBoxMinimal
+    {
+        get
+        {
+            NPVoxBox box = null;
+            foreach (NPVoxCoord coord in this.EnumerateVoxels())
+            {
+                if ( voxels[GetIndex(coord)] == 0 )
+                {
+                    continue;
+                }
+
+                if ( box == null )
+                {
+                    box = new NPVoxBox(coord, coord);
+                }
+                else
+                {
+                    box.EnlargeToInclude(coord);
+                }
+            }
+            return box;
+        }
+    }
+
     public void RecalculateNumVoxels(bool withWarning = false)
     {
         InvalidateVoxelCache();
