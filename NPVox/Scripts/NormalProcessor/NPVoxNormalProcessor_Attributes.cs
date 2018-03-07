@@ -14,7 +14,7 @@ public class NPVoxAttributeNormalProcessorListItem : System.Attribute
 {
     public string Name;
     public System.Type ClassType;
-    NPVoxNormalProcessorType ProcessorType;
+    public NPVoxNormalProcessorType ProcessorType;
     public int ListPriority;
 
     public NPVoxAttributeNormalProcessorListItem( string editorName, System.Type classType, NPVoxNormalProcessorType processorType )

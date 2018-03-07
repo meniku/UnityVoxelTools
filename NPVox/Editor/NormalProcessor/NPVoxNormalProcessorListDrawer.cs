@@ -122,9 +122,14 @@ public class NPVoxNormalProcessorListDrawer : PropertyDrawer
 
                 GUI.backgroundColor = s_colorBackgroundGUISecondary;
 
-                if ( GUILayout.Button( "View" ) )
+                if ( GUILayout.Button( "View / Edit" ) )
                 {
-                    // TODO: Implement view window
+                    NPVoxNormalProcessorView view = NPVoxNormalProcessorView.ShowWindow();
+
+                    string strAssetPath = AssetDatabase.GetAssetPath(target);
+                    string[] guids = AssetDatabase.GetDependencies(strAssetPath);
+
+                    view.SetContext(target, processor);
                 }
                 
                 GUILayout.Space( 20.0f );
