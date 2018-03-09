@@ -124,12 +124,16 @@ public class NPVoxNormalProcessorListDrawer : PropertyDrawer
 
                 if ( GUILayout.Button( "View / Edit" ) )
                 {
-                    NPVoxNormalProcessorView view = NPVoxNormalProcessorView.ShowWindow();
+                    //NPVoxNormalProcessorView view = NPVoxNormalProcessorView.ShowWindow();
 
-                    string strAssetPath = AssetDatabase.GetAssetPath(target);
-                    string[] guids = AssetDatabase.GetDependencies(strAssetPath);
+                    //string strAssetPath = AssetDatabase.GetAssetPath(target);
+                    //string[] guids = AssetDatabase.GetDependencies(strAssetPath);
 
-                    view.SetContext(target, processor);
+                    //view.SetContext(target, processor);
+
+                    NPVoxNormalProcessorPreview preview = NPVoxNormalProcessorPreview.ShowWindow();
+
+                    preview.SetContext( processor.GeneratePreviewContext( target ) );
                 }
                 
                 GUILayout.Space( 20.0f );

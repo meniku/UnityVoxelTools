@@ -2,6 +2,48 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using Assets;
+
+public class NPVoxNormalProcessorPreviewContext
+{
+    public static readonly NPVoxNormalProcessorPreviewContext Default = new NPVoxNormalProcessorPreviewContext();
+
+    public NPVoxMeshOutput MeshOutput           { get; private set; }
+    public NPVoxNormalProcessor ViewedProcessor { get; private set; }
+    public GameObject PreviewObject             { get; private set; }
+    public bool IsValid                         { get; private set; }
+
+    public NPVoxNormalProcessorPreviewContext()
+    {
+        MeshOutput = null;
+        ViewedProcessor = null;
+        PreviewObject = null;
+        IsValid = false;
+    }
+
+    public void Invalidate()
+    {
+        GameObject.DestroyImmediate( PreviewObject );
+        MeshOutput = null;
+        ViewedProcessor = null;
+        PreviewObject = null;
+        IsValid = false;
+    }
+
+    public void Set( NPVoxMeshOutput _meshOutput, NPVoxNormalProcessor _processor )
+    {
+        MeshOutput = _meshOutput;
+        ViewedProcessor = _processor;
+        PreviewObject = MeshOutput.Instatiate();
+        PreviewObject.hideFlags = HideFlags.HideAndDontSave;
+        IsValid = true;
+    }
+
+    public bool IsEqual( NPVoxNormalProcessorPreviewContext _other )
+    {
+        return false;
+    }
+}
 
 public abstract class NPVoxNormalProcessorPass
 {
@@ -19,6 +61,9 @@ public abstract class NPVoxNormalProcessor : ScriptableObject, ICloneable
 
     [SerializeField]
     protected List<int> m_voxelGroupFilter;
+
+    [NonSerialized]
+    private List<NPVoxNormalProcessorPreviewContext> m_validPreviewContexts;
 
     public List<NPVoxNormalProcessorPass> Passes
     {
@@ -42,6 +87,8 @@ public abstract class NPVoxNormalProcessor : ScriptableObject, ICloneable
         }
         
         m_passes = new List<NPVoxNormalProcessorPass>();
+
+        m_validPreviewContexts = new List<NPVoxNormalProcessorPreviewContext>();
 
         OneTimeInit();
     }
@@ -92,6 +139,13 @@ public abstract class NPVoxNormalProcessor : ScriptableObject, ICloneable
     public void OnDestroy()
     {
         m_passes.Clear();
+
+        foreach( NPVoxNormalProcessorPreviewContext context in m_validPreviewContexts )
+        {
+            context.Invalidate();
+        }
+
+        ClearInvalidPreviewContexts();
     }
 
     public void OnGUI()
@@ -179,4 +233,25 @@ public abstract class NPVoxNormalProcessor : ScriptableObject, ICloneable
     }
 
     public abstract object Clone();
+
+    public NPVoxNormalProcessorPreviewContext GeneratePreviewContext( NPVoxMeshOutput _meshOutput )
+    {
+        ClearInvalidPreviewContexts();
+        NPVoxNormalProcessorPreviewContext previewContext = new NPVoxNormalProcessorPreviewContext();
+        previewContext.Set( _meshOutput, this );
+        m_validPreviewContexts.Add( previewContext );
+        return previewContext;
+    }
+
+    public void ClearInvalidPreviewContexts()
+    {
+        NPVoxNormalProcessorPreviewContext[] contexts = m_validPreviewContexts.ToArray();
+        foreach ( NPVoxNormalProcessorPreviewContext context in contexts )
+        {
+            if ( !context.IsValid )
+            {
+                m_validPreviewContexts.Remove( context );
+            }
+        }
+    }
 }
