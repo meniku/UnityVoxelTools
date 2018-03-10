@@ -4,16 +4,14 @@ using UnityEngine;
 using UnityEditor;
 using Assets;
 
-public class NPVoxNormalProcessorPreviewContext
+public class NPVoxNormalProcessorPreviewContext : ScriptableObject
 {
-    public static readonly NPVoxNormalProcessorPreviewContext Default = new NPVoxNormalProcessorPreviewContext();
-
     public NPVoxMeshOutput MeshOutput           { get; private set; }
     public NPVoxNormalProcessor ViewedProcessor { get; private set; }
     public GameObject PreviewObject             { get; private set; }
     public bool IsValid                         { get; private set; }
 
-    public NPVoxNormalProcessorPreviewContext()
+    void OnEnable()
     {
         MeshOutput = null;
         ViewedProcessor = null;
@@ -36,12 +34,8 @@ public class NPVoxNormalProcessorPreviewContext
         ViewedProcessor = _processor;
         PreviewObject = MeshOutput.Instatiate();
         PreviewObject.hideFlags = HideFlags.HideAndDontSave;
+        PreviewObject.SetActive( false );
         IsValid = true;
-    }
-
-    public bool IsEqual( NPVoxNormalProcessorPreviewContext _other )
-    {
-        return false;
     }
 }
 
@@ -237,7 +231,7 @@ public abstract class NPVoxNormalProcessor : ScriptableObject, ICloneable
     public NPVoxNormalProcessorPreviewContext GeneratePreviewContext( NPVoxMeshOutput _meshOutput )
     {
         ClearInvalidPreviewContexts();
-        NPVoxNormalProcessorPreviewContext previewContext = new NPVoxNormalProcessorPreviewContext();
+        NPVoxNormalProcessorPreviewContext previewContext = ScriptableObject.CreateInstance< NPVoxNormalProcessorPreviewContext >();
         previewContext.Set( _meshOutput, this );
         m_validPreviewContexts.Add( previewContext );
         return previewContext;
