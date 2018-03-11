@@ -18,13 +18,14 @@ public class NPVoxNormalProcessorPreview : EditorWindow
     MeshRenderer m_meshRenderer = null;
 
     bool[] m_mouseDown = { false, false, false };
-    Vector2 m_mouseOrient = Vector2.zero;
-    Vector2 m_mouseDrag = Vector2.zero;
+    Vector2 m_mouseRotate = Vector2.zero;
+    Vector2 m_mousePan = Vector2.zero;
     float m_mouseZoom = 0.0f;
     float m_sensitivityDrag = 0.1f;
     float m_sensitivityOrient = 0.5f;
     float m_sensitivityZoom = 0.1f;
-
+    Rect m_sceneRect = new Rect();
+    
     public static NPVoxNormalProcessorPreview ShowWindow()
     {
         return GetWindow<NPVoxNormalProcessorPreview>( "Normal Editor", true );
@@ -53,40 +54,6 @@ public class NPVoxNormalProcessorPreview : EditorWindow
 
     void OnEnable()
     {
-    }
-
-    void OnDestroy()
-    {
-        m_context.Invalidate();
-        m_context = null;
-        m_renderer.Cleanup();
-    }
-
-    void OnGUI()
-    {
-        UpdateInput();
-
-        if ( m_context != null && m_context.IsValid )
-        {
-            EnableSceneObjects( true );
-
-            // Draw GUI
-            GUILayout.BeginHorizontal( GUILayout.ExpandWidth( false ) );
-
-            // Draw tool bar
-            GUIStyle styleToolBox = new GUIStyle();
-            styleToolBox.stretchWidth = false;
-            GUILayout.BeginVertical( styleToolBox, GUILayout.ExpandWidth( false ) );
-            GUILayout.Label( m_title, GUILayout.ExpandWidth( false ) );
-            GUILayout.EndVertical();
-
-            // Draw preview
-            GUILayout.Box( "", GUILayout.ExpandWidth( true ), GUILayout.ExpandHeight( true ) );
-            DrawPreviewObject( GUILayoutUtility.GetLastRect() );
-            GUILayout.EndHorizontal();
-
-            EnableSceneObjects( false );
-        }
     }
 
     void InitScene()
@@ -125,6 +92,64 @@ public class NPVoxNormalProcessorPreview : EditorWindow
         EnableSceneObjects( false );
     }
 
+    void OnDestroy()
+    {
+        m_context.Invalidate();
+        m_context = null;
+        m_renderer.Cleanup();
+    }
+
+    void OnGUI()
+    {
+        if ( m_context != null && m_context.IsValid )
+        {
+            EnableSceneObjects( true );
+
+            // Setup styles
+            GUIStyle noStretch = new GUIStyle();
+            noStretch.stretchWidth = false;
+            noStretch.stretchHeight = false;
+            GUILayoutOption[] noFill = { GUILayout.ExpandWidth( false ), GUILayout.ExpandHeight( false ) };
+            GUILayoutOption[] fill = { GUILayout.ExpandWidth( true ), GUILayout.ExpandHeight( true ) };
+
+            // Draw GUI
+            GUILayout.BeginHorizontal( GUILayout.ExpandWidth( false ) );
+
+            // Draw tool bar
+            GUILayout.BeginVertical( noStretch, noFill );
+            GUILayout.Label( m_title, noFill );
+            GUILayout.Space( 8.0f );
+            GUILayout.Label( "Mouse Sensitivity:", noFill );
+            float fLabelWidthSliders = 50.0f;
+            m_sensitivityOrient = NPipeGUILayout.HorizontalSlider( "Rotate:", fLabelWidthSliders, m_sensitivityOrient, 0.01f, 1.0f, GUILayout.Width( 100.0f ) );
+            m_sensitivityDrag = NPipeGUILayout.HorizontalSlider( "Pan:", fLabelWidthSliders, m_sensitivityDrag, 0.01f, 1.0f, GUILayout.Width( 100.0f ) );
+            m_sensitivityZoom = NPipeGUILayout.HorizontalSlider( "Zoom:", fLabelWidthSliders, m_sensitivityZoom, 0.01f, 1.0f, GUILayout.Width( 100.0f ) );
+            //GUILayout.Label( m_renderer.camera.transform.rotation.eulerAngles.x.ToString(), noStretch, noFill );
+            GUILayout.EndVertical();
+            // Draw preview
+            GUILayout.Box( "", fill );
+            m_sceneRect = GUILayoutUtility.GetLastRect();
+            DrawPreviewObject( m_sceneRect );
+            GUILayout.EndHorizontal();
+
+            EnableSceneObjects( false );
+
+            UpdateInput();
+        }
+        else
+        {
+            // Why is the context invalid?
+            if ( m_context != null )
+            {
+
+            }
+            else
+            {
+                GUILayout.Label( "The preview context is not set!" );
+            }
+        }
+    }
+
     void InitObjectForPreview( GameObject _object )
     {
         m_meshFilter = _object.GetComponent<MeshFilter>();
@@ -143,8 +168,6 @@ public class NPVoxNormalProcessorPreview : EditorWindow
 
     void EnableSceneObjects( bool _bEnable )
     {
-        m_context.PreviewObject.SetActive( _bEnable );
-
         for ( int i = 0; i < m_renderer.camera.transform.childCount; i++ )
         {
             m_renderer.camera.transform.GetChild( i ).gameObject.SetActive( _bEnable );
@@ -159,7 +182,11 @@ public class NPVoxNormalProcessorPreview : EditorWindow
 
         switch ( currentEvent.type )
         {
-            case EventType.MouseDown: m_mouseDown[ currentEvent.button ] = true;
+            case EventType.MouseDown:
+                if ( m_sceneRect.Contains( currentEvent.mousePosition ) )
+                {
+                    m_mouseDown[ currentEvent.button ] = true;
+                }
                 break;
 
             case EventType.MouseUp: m_mouseDown[ currentEvent.button ] = false;
@@ -172,16 +199,16 @@ public class NPVoxNormalProcessorPreview : EditorWindow
                     {
                         if ( m_mouseDown[ 1 ] )
                         {
-                            m_mouseOrient += currentEvent.delta;
+                            m_mouseRotate += currentEvent.delta;
                         }
                         else
                         {
-                            m_mouseDrag += currentEvent.delta;
+                            m_mousePan += currentEvent.delta;
                         }
                     }
                     else if ( m_mouseDown[ 1 ] )
                     {
-                        m_mouseOrient += currentEvent.delta;
+                        m_mouseRotate += currentEvent.delta;
                     }
                 }
                 break;
@@ -200,15 +227,21 @@ public class NPVoxNormalProcessorPreview : EditorWindow
 
     void UpdateScene()
     {
-        float fPitchConstraint = 90 / m_sensitivityOrient;
-        m_mouseOrient = new Vector2( m_mouseOrient.x, Mathf.Clamp( m_mouseOrient.y, -fPitchConstraint, fPitchConstraint ) );
-        m_renderer.camera.transform.rotation = Quaternion.Euler( new Vector3( m_mouseOrient.y * m_sensitivityOrient, m_mouseOrient.x * m_sensitivityOrient, 0 ) );
+        Vector3 currentRotation = m_renderer.camera.transform.rotation.eulerAngles;
+        float rotationX = currentRotation.x + m_mouseRotate.y * m_sensitivityOrient;
+        // TODO: Clamp value
+
+        m_renderer.camera.transform.rotation = Quaternion.Euler( new Vector3(
+            rotationX,
+            currentRotation.y + m_mouseRotate.x * m_sensitivityOrient, 
+            currentRotation.z ) );
 
         m_renderer.camera.transform.position += m_renderer.camera.transform.forward * -m_mouseZoom * m_sensitivityZoom;
-        m_renderer.camera.transform.position += m_renderer.camera.transform.right * -m_mouseDrag.x * m_sensitivityDrag;
-        m_renderer.camera.transform.position += m_renderer.camera.transform.up * m_mouseDrag.y * m_sensitivityDrag;
+        m_renderer.camera.transform.position += m_renderer.camera.transform.right * -m_mousePan.x * m_sensitivityDrag;
+        m_renderer.camera.transform.position += m_renderer.camera.transform.up * m_mousePan.y * m_sensitivityDrag;
 
         m_mouseZoom = 0.0f;
-        m_mouseDrag = Vector2.zero;
+        m_mouseRotate = Vector2.zero;
+        m_mousePan = Vector2.zero;
     }
 }

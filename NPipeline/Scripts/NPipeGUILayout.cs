@@ -56,6 +56,19 @@ public class NPipeGUILayout
 
         return selectedValue;
     }
-    #endif
+
+    public static float HorizontalSlider( string _label, float _labelWidth, float _value, float _min, float _max, params GUILayoutOption[] _options )
+    {
+        GUIStyle noStretch = new GUIStyle();
+        noStretch.stretchWidth = false;
+        noStretch.stretchHeight = false;
+
+        GUILayout.BeginHorizontal( noStretch, GUILayout.ExpandWidth( false ), GUILayout.ExpandHeight( false ) );
+        GUILayout.Label( _label, GUILayout.ExpandWidth( false ), GUILayout.ExpandHeight( false ), GUILayout.Width( _labelWidth ) );
+        float fNewValue = GUILayout.HorizontalSlider( _value, _min, _max, _options );
+        GUILayout.EndHorizontal();
+        return fNewValue;
+    }
+#endif
 }
 
