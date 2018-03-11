@@ -69,6 +69,19 @@ public class NPipeGUILayout
         GUILayout.EndHorizontal();
         return fNewValue;
     }
+
+    public static int Toolbar( string _label, int _selected, string[] _contents, params GUILayoutOption[] _options )
+    {
+        GUIStyle noStretch = new GUIStyle();
+        noStretch.stretchWidth = false;
+        noStretch.stretchHeight = false;
+
+        GUILayout.BeginHorizontal( noStretch, GUILayout.ExpandWidth( false ), GUILayout.ExpandHeight( false ) );
+        GUILayout.Label( _label, GUILayout.ExpandWidth( false ), GUILayout.ExpandHeight( false ) );
+        _selected = GUILayout.Toolbar( _selected, _contents, _options );
+        GUILayout.EndHorizontal();
+        return _selected;
+    }
 #endif
 }
 

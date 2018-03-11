@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using System;
 
 [ExecuteInEditMode]
 public class NPVoxNormalProcessorPreview : EditorWindow
@@ -25,6 +26,9 @@ public class NPVoxNormalProcessorPreview : EditorWindow
     float m_sensitivityOrient = 0.5f;
     float m_sensitivityZoom = 0.1f;
     Rect m_sceneRect = new Rect();
+    int m_cameraType = 0;
+
+    Matrix4x4 m_meshTransform = Matrix4x4.identity;
     
     public static NPVoxNormalProcessorPreview ShowWindow()
     {
@@ -64,8 +68,7 @@ public class NPVoxNormalProcessorPreview : EditorWindow
         m_renderer.cameraFieldOfView = 60.0f;
         m_renderer.camera.nearClipPlane = 0.3f;
         m_renderer.camera.farClipPlane = 1000.0f;
-        m_renderer.camera.transform.position = new Vector3( 0, 0, -10 );
-        m_renderer.camera.transform.LookAt( m_context.PreviewObject.transform );
+        InitCamera();
         InitObjectForPreview( m_context.PreviewObject );
 
         // Disable basic lights
@@ -105,6 +108,9 @@ public class NPVoxNormalProcessorPreview : EditorWindow
         {
             EnableSceneObjects( true );
 
+            // store previous UI states to process state switches later
+            int cameraTypePrevious = m_cameraType;
+
             // Setup styles
             GUIStyle noStretch = new GUIStyle();
             noStretch.stretchWidth = false;
@@ -115,26 +121,35 @@ public class NPVoxNormalProcessorPreview : EditorWindow
             // Draw GUI
             GUILayout.BeginHorizontal( GUILayout.ExpandWidth( false ) );
 
-            // Draw tool bar
+            // Draw navigation tool bar
             GUILayout.BeginVertical( noStretch, noFill );
             GUILayout.Label( m_title, noFill );
             GUILayout.Space( 8.0f );
-            GUILayout.Label( "Mouse Sensitivity:", noFill );
+            m_cameraType = NPipeGUILayout.Toolbar( "Camera: ", m_cameraType, new string[]{ "Free", "Orbit" }, noFill );
+            GUILayout.Space( 8.0f );
+            GUILayout.Label( "Sensitivity:", noFill );
             float fLabelWidthSliders = 50.0f;
-            m_sensitivityOrient = NPipeGUILayout.HorizontalSlider( "Rotate:", fLabelWidthSliders, m_sensitivityOrient, 0.01f, 1.0f, GUILayout.Width( 100.0f ) );
-            m_sensitivityDrag = NPipeGUILayout.HorizontalSlider( "Pan:", fLabelWidthSliders, m_sensitivityDrag, 0.01f, 1.0f, GUILayout.Width( 100.0f ) );
-            m_sensitivityZoom = NPipeGUILayout.HorizontalSlider( "Zoom:", fLabelWidthSliders, m_sensitivityZoom, 0.01f, 1.0f, GUILayout.Width( 100.0f ) );
-            //GUILayout.Label( m_renderer.camera.transform.rotation.eulerAngles.x.ToString(), noStretch, noFill );
+            m_sensitivityOrient = NPipeGUILayout.HorizontalSlider( "Rotate:", fLabelWidthSliders, m_sensitivityOrient, 0.01f, 1.0f, GUILayout.Width( 100.0f ) ); GUILayout.Space( -6 );
+            m_sensitivityDrag = NPipeGUILayout.HorizontalSlider( "Pan:", fLabelWidthSliders, m_sensitivityDrag, 0.01f, 1.0f, GUILayout.Width( 100.0f ) ); GUILayout.Space( -6 );
+            m_sensitivityZoom = NPipeGUILayout.HorizontalSlider( "Zoom:", fLabelWidthSliders, m_sensitivityZoom, 0.01f, 1.0f, GUILayout.Width( 100.0f ) ); GUILayout.Space( -6 );
+            GUILayout.Label( "______________________", noFill );
             GUILayout.EndVertical();
+
             // Draw preview
             GUILayout.Box( "", fill );
             m_sceneRect = GUILayoutUtility.GetLastRect();
-            DrawPreviewObject( m_sceneRect );
+            DrawScene( m_sceneRect );
             GUILayout.EndHorizontal();
 
             EnableSceneObjects( false );
 
             UpdateInput();
+
+            // Process GUI state switches
+            if ( cameraTypePrevious != m_cameraType )
+            {
+                InitCamera();
+            }
         }
         else
         {
@@ -154,20 +169,29 @@ public class NPVoxNormalProcessorPreview : EditorWindow
     {
         m_meshFilter = _object.GetComponent<MeshFilter>();
         m_meshRenderer = _object.GetComponent<MeshRenderer>();
+        m_meshTransform = Matrix4x4.Rotate( Quaternion.Euler(90, 0, 0) );
     }
 
-    void DrawPreviewObject( Rect _rect )
+    private void InitCamera()
+    {
+        m_renderer.camera.transform.position = new Vector3( 0, 0, -10 );
+        m_renderer.camera.transform.LookAt( m_context.PreviewObject.transform );
+    }
+
+    private void DrawScene( Rect _rect )
     {
         m_renderer.BeginPreview( _rect, GUIStyle.none );
 
-        m_renderer.DrawMesh( m_meshFilter.sharedMesh, Matrix4x4.identity, m_meshRenderer.sharedMaterial, 0 );
+        m_renderer.DrawMesh( m_meshFilter.sharedMesh, m_meshTransform, m_meshRenderer.sharedMaterial, 0 );
+
         m_renderer.camera.Render();
 
         GUI.DrawTexture( _rect, m_renderer.EndPreview() );
     }
 
-    void EnableSceneObjects( bool _bEnable )
+    private void EnableSceneObjects( bool _bEnable )
     {
+        //m_context.PreviewObject.SetActive( _bEnable );
         for ( int i = 0; i < m_renderer.camera.transform.childCount; i++ )
         {
             m_renderer.camera.transform.GetChild( i ).gameObject.SetActive( _bEnable );
@@ -227,19 +251,33 @@ public class NPVoxNormalProcessorPreview : EditorWindow
 
     void UpdateScene()
     {
-        Vector3 currentRotation = m_renderer.camera.transform.rotation.eulerAngles;
-        float rotationX = currentRotation.x + m_mouseRotate.y * m_sensitivityOrient;
-        // TODO: Clamp value
+        if ( m_cameraType == 0 )
+        {
+            Vector3 currentRotation = m_renderer.camera.transform.rotation.eulerAngles;
 
-        m_renderer.camera.transform.rotation = Quaternion.Euler( new Vector3(
-            rotationX,
-            currentRotation.y + m_mouseRotate.x * m_sensitivityOrient, 
-            currentRotation.z ) );
+            m_renderer.camera.transform.rotation = Quaternion.Euler( new Vector3(
+                currentRotation.x + m_mouseRotate.y * m_sensitivityOrient,
+                currentRotation.y + m_mouseRotate.x * m_sensitivityOrient,
+                currentRotation.z ) );
 
-        m_renderer.camera.transform.position += m_renderer.camera.transform.forward * -m_mouseZoom * m_sensitivityZoom;
-        m_renderer.camera.transform.position += m_renderer.camera.transform.right * -m_mousePan.x * m_sensitivityDrag;
-        m_renderer.camera.transform.position += m_renderer.camera.transform.up * m_mousePan.y * m_sensitivityDrag;
+            m_renderer.camera.transform.position += m_renderer.camera.transform.forward * -m_mouseZoom * m_sensitivityZoom;
+            m_renderer.camera.transform.position += m_renderer.camera.transform.right * -m_mousePan.x * m_sensitivityDrag;
+            m_renderer.camera.transform.position += m_renderer.camera.transform.up * m_mousePan.y * m_sensitivityDrag;
+        }
+        else if ( m_cameraType == 1 )
+        {
+            Vector3 currentRotation = m_renderer.camera.transform.rotation.eulerAngles;
+            float distance = m_renderer.camera.transform.position.magnitude;
 
+            m_renderer.camera.transform.rotation = Quaternion.Euler( new Vector3(
+                currentRotation.x + m_mouseRotate.y * m_sensitivityOrient,
+                currentRotation.y + m_mouseRotate.x * m_sensitivityOrient,
+                currentRotation.z ) );
+
+            m_renderer.camera.transform.position = -m_renderer.camera.transform.forward * ( distance + m_mouseZoom * m_sensitivityZoom );
+        }
+
+        // Reset input states
         m_mouseZoom = 0.0f;
         m_mouseRotate = Vector2.zero;
         m_mousePan = Vector2.zero;
