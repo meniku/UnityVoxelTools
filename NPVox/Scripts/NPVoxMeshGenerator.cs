@@ -1,7 +1,7 @@
 using UnityEngine;
 using System;
 
-public class NPVoxMeshTempData
+public class NPVoxMeshData
 {
     public NPVoxCoord voxCoord = NPVoxCoord.INVALID;
 
@@ -37,7 +37,7 @@ public class NPVoxMeshTempData
 
     public NPVoxNormalMode normalMode = NPVoxNormalMode.SMOOTH;
 
-    public NPVoxMeshTempData()
+    public NPVoxMeshData()
     {
     }
 
@@ -88,7 +88,7 @@ public class NPVoxMeshGenerator
         var tangents = new Vector4[model.NumVoxels * 8];
         var colors = new Color[model.NumVoxels * 8];
 
-        var tmp = new NPVoxMeshTempData[ model.NumVoxels ];
+        var tmp = new NPVoxMeshData[ model.NumVoxels ];
 
         int currentVertexIndex = 0;
         var currentTriangleIndex = new int[vertexGroupCount];
@@ -138,7 +138,7 @@ public class NPVoxMeshGenerator
         {
             if (model.HasVoxel(voxCoord))
             {
-                tmp[ voxIndex ] = new NPVoxMeshTempData();
+                tmp[ voxIndex ] = new NPVoxMeshData();
 
                 tmp[ voxIndex ].loop = loop;
                 tmp[ voxIndex ].cutout = cutout;
@@ -452,5 +452,170 @@ public class NPVoxMeshGenerator
         {
             mesh.RecalculateNormals();
         }
+    }
+
+    public static NPVoxMeshData[] GenerateVoxMeshData( 
+        NPVoxModel model,
+        Vector3 cubeSize,
+        NPVoxOptimization optimization = NPVoxOptimization.OFF,
+        int BloodColorIndex = 0,
+        NPVoxFaces loop = null,
+        NPVoxFaces cutout = null,
+        NPVoxFaces include = null  )
+    {
+        bool hasVoxelGroups = model.HasVoxelGroups();
+        byte vertexGroupCount = model.NumVoxelGroups;
+        
+        var voxMeshData = new NPVoxMeshData[ model.NumVoxels ];
+
+        int currentVertexIndex = 0;
+
+        if ( loop == null )
+        {
+            loop = new NPVoxFaces();
+        }
+
+        if ( include == null )
+        {
+            include = new NPVoxFaces( 1, 1, 1, 1, 1, 1 );
+        }
+
+        NPVoxBox voxelsToInclude = model.BoundingBox;
+        Vector3 cutoutOffset = Vector3.zero;
+        if ( cutout != null )
+        {
+            Vector3 originalCenter = voxelsToInclude.SaveCenter;
+            voxelsToInclude.Left = ( sbyte ) Mathf.Abs( cutout.Left );
+            voxelsToInclude.Down = ( sbyte ) Mathf.Abs( cutout.Down );
+            voxelsToInclude.Back = ( sbyte ) Mathf.Abs( cutout.Back );
+            voxelsToInclude.Right = ( sbyte ) ( voxelsToInclude.Right - ( sbyte ) Mathf.Abs( cutout.Right ) );
+            voxelsToInclude.Up = ( sbyte ) ( voxelsToInclude.Up - ( sbyte ) Mathf.Abs( cutout.Up ) );
+            voxelsToInclude.Forward = ( sbyte ) ( voxelsToInclude.Forward - ( sbyte ) Mathf.Abs( cutout.Forward ) );
+            cutoutOffset = Vector3.Scale( originalCenter - voxelsToInclude.SaveCenter, cubeSize );
+        }
+
+        NPVoxToUnity npVoxToUnity = new NPVoxToUnity( model, cubeSize );
+        Vector3 size = new Vector3(
+            voxelsToInclude.Size.X * cubeSize.x,
+            voxelsToInclude.Size.Y * cubeSize.y,
+            voxelsToInclude.Size.Z * cubeSize.z
+        );
+
+        NPVoxBox voxelNormalNeighbours = new NPVoxBox( new NPVoxCoord( -1, -1, -1 ), new NPVoxCoord( 1, 1, 1 ) );
+
+        // Collect temporary data to use for model generation
+        int voxIndex = 0;
+        foreach ( NPVoxCoord voxCoord in voxelsToInclude.Enumerate() )
+        {
+            if ( model.HasVoxel( voxCoord ) )
+            {
+                voxMeshData[ voxIndex ] = new NPVoxMeshData();
+
+                voxMeshData[ voxIndex ].loop = loop;
+                voxMeshData[ voxIndex ].cutout = cutout;
+                voxMeshData[ voxIndex ].include = include;
+
+                // Compute voxel center
+                voxMeshData[ voxIndex ].voxelCenter = npVoxToUnity.ToUnityPosition( voxCoord ) + cutoutOffset;
+                voxMeshData[ voxIndex ].voxCoord = voxCoord;
+
+                voxMeshData[ voxIndex ].voxToUnity = npVoxToUnity;
+
+                // Determine vertex group index
+                voxMeshData[ voxIndex ].vertexGroupIndex = 0;
+                if ( hasVoxelGroups )
+                {
+                    voxMeshData[ voxIndex ].vertexGroupIndex = model.GetVoxelGroup( voxCoord );
+                }
+
+                // do we have this side
+                voxMeshData[ voxIndex ].hasLeft = !model.HasVoxel( model.LoopCoord( voxCoord + NPVoxCoord.LEFT, loop ) );
+                voxMeshData[ voxIndex ].hasRight = !model.HasVoxel( model.LoopCoord( voxCoord + NPVoxCoord.RIGHT, loop ) );
+                voxMeshData[ voxIndex ].hasDown = !model.HasVoxel( model.LoopCoord( voxCoord + NPVoxCoord.DOWN, loop ) );
+                voxMeshData[ voxIndex ].hasUp = !model.HasVoxel( model.LoopCoord( voxCoord + NPVoxCoord.UP, loop ) );
+                voxMeshData[ voxIndex ].hasForward = !model.HasVoxel( model.LoopCoord( voxCoord + NPVoxCoord.FORWARD, loop ) );
+                voxMeshData[ voxIndex ].hasBack = !model.HasVoxel( model.LoopCoord( voxCoord + NPVoxCoord.BACK, loop ) );
+
+                // do we actually want to include this side in our mesh
+                // NOTE: cutout < 0 means we still render the mesh even though it is cutout
+                //       cutout > 0 means we don't render the mesh when cutout
+                voxMeshData[ voxIndex ].includeLeft = ( voxMeshData[ voxIndex ].hasLeft || ( cutout.Left < 0 && voxCoord.X == voxelsToInclude.Left ) ) && include.Left == 1;
+                voxMeshData[ voxIndex ].includeRight = ( voxMeshData[ voxIndex ].hasRight || ( cutout.Right < 0 && voxCoord.X == voxelsToInclude.Right ) ) && include.Right == 1;
+                voxMeshData[ voxIndex ].includeUp = ( voxMeshData[ voxIndex ].hasUp || ( cutout.Up < 0 && voxCoord.Y == voxelsToInclude.Up ) ) && include.Up == 1;
+                voxMeshData[ voxIndex ].includeDown = ( voxMeshData[ voxIndex ].hasDown || ( cutout.Down < 0 && voxCoord.Y == voxelsToInclude.Down ) ) && include.Down == 1;
+                voxMeshData[ voxIndex ].includeBack = ( voxMeshData[ voxIndex ].hasBack || ( cutout.Back < 0 && voxCoord.Z == voxelsToInclude.Back ) ) && include.Back == 1;
+                voxMeshData[ voxIndex ].includeForward = ( voxMeshData[ voxIndex ].hasForward || ( cutout.Forward < 0 && voxCoord.Z == voxelsToInclude.Forward ) ) && include.Forward == 1;
+
+                voxMeshData[ voxIndex ].isHidden = !voxMeshData[ voxIndex ].hasForward &&
+                                !voxMeshData[ voxIndex ].hasBack &&
+                                !voxMeshData[ voxIndex ].hasLeft &&
+                                !voxMeshData[ voxIndex ].hasRight &&
+                                !voxMeshData[ voxIndex ].hasUp &&
+                                !voxMeshData[ voxIndex ].hasDown;
+
+
+                if ( voxMeshData[ voxIndex ].isHidden && optimization == NPVoxOptimization.PER_VOXEL )
+                {
+                    continue;
+                }
+
+                if ( voxMeshData[ voxIndex ].isHidden && BloodColorIndex > 0 )
+                {
+                    model.SetVoxel( voxCoord, ( byte ) BloodColorIndex ); // WTF WTF WTF?!? we should not modify the MODEL in here !!!!           elfapo: AAAAHHH NOOOO!!!! :O    j.k. ;)
+                }
+
+                // prepare cube vertices
+                voxMeshData[ voxIndex ].numVertices = 0;
+                voxMeshData[ voxIndex ].vertexIndexOffsetBegin = currentVertexIndex;
+
+                if ( optimization != NPVoxOptimization.PER_FACE || voxMeshData[ voxIndex ].includeBack || voxMeshData[ voxIndex ].includeLeft || voxMeshData[ voxIndex ].includeDown )
+                {
+                    voxMeshData[ voxIndex ].vertexIndexOffsets[ 0 ] = voxMeshData[ voxIndex ].numVertices++;
+                    voxMeshData[ voxIndex ].vertexPositionOffsets[ voxMeshData[ voxIndex ].vertexIndexOffsets[ 0 ] ] = new Vector3( -0.5f, -0.5f, -0.5f );
+                }
+                if ( optimization != NPVoxOptimization.PER_FACE || voxMeshData[ voxIndex ].includeBack || voxMeshData[ voxIndex ].includeRight || voxMeshData[ voxIndex ].includeDown )
+                {
+                    voxMeshData[ voxIndex ].vertexIndexOffsets[ 1 ] = voxMeshData[ voxIndex ].numVertices++;
+                    voxMeshData[ voxIndex ].vertexPositionOffsets[ voxMeshData[ voxIndex ].vertexIndexOffsets[ 1 ] ] = new Vector3( 0.5f, -0.5f, -0.5f );
+                }
+                if ( optimization != NPVoxOptimization.PER_FACE || voxMeshData[ voxIndex ].includeBack || voxMeshData[ voxIndex ].includeLeft || voxMeshData[ voxIndex ].includeUp )
+                {
+                    voxMeshData[ voxIndex ].vertexIndexOffsets[ 2 ] = voxMeshData[ voxIndex ].numVertices++;
+                    voxMeshData[ voxIndex ].vertexPositionOffsets[ voxMeshData[ voxIndex ].vertexIndexOffsets[ 2 ] ] = new Vector3( -0.5f, 0.5f, -0.5f );
+                }
+                if ( optimization != NPVoxOptimization.PER_FACE || voxMeshData[ voxIndex ].includeBack || voxMeshData[ voxIndex ].includeRight || voxMeshData[ voxIndex ].includeUp )
+                {
+                    voxMeshData[ voxIndex ].vertexIndexOffsets[ 3 ] = voxMeshData[ voxIndex ].numVertices++;
+                    voxMeshData[ voxIndex ].vertexPositionOffsets[ voxMeshData[ voxIndex ].vertexIndexOffsets[ 3 ] ] = new Vector3( 0.5f, 0.5f, -0.5f );
+                }
+                if ( optimization != NPVoxOptimization.PER_FACE || voxMeshData[ voxIndex ].includeForward || voxMeshData[ voxIndex ].includeLeft || voxMeshData[ voxIndex ].includeDown )
+                {
+                    voxMeshData[ voxIndex ].vertexIndexOffsets[ 4 ] = voxMeshData[ voxIndex ].numVertices++;
+                    voxMeshData[ voxIndex ].vertexPositionOffsets[ voxMeshData[ voxIndex ].vertexIndexOffsets[ 4 ] ] = new Vector3( -0.5f, -0.5f, 0.5f );
+                }
+                if ( optimization != NPVoxOptimization.PER_FACE || voxMeshData[ voxIndex ].includeForward || voxMeshData[ voxIndex ].includeRight || voxMeshData[ voxIndex ].includeDown )
+                {
+                    voxMeshData[ voxIndex ].vertexIndexOffsets[ 5 ] = voxMeshData[ voxIndex ].numVertices++;
+                    voxMeshData[ voxIndex ].vertexPositionOffsets[ voxMeshData[ voxIndex ].vertexIndexOffsets[ 5 ] ] = new Vector3( 0.5f, -0.5f, 0.5f );
+                }
+                if ( optimization != NPVoxOptimization.PER_FACE || voxMeshData[ voxIndex ].includeForward || voxMeshData[ voxIndex ].includeLeft || voxMeshData[ voxIndex ].includeUp )
+                {
+                    voxMeshData[ voxIndex ].vertexIndexOffsets[ 6 ] = voxMeshData[ voxIndex ].numVertices++;
+                    voxMeshData[ voxIndex ].vertexPositionOffsets[ voxMeshData[ voxIndex ].vertexIndexOffsets[ 6 ] ] = new Vector3( -0.5f, 0.5f, 0.5f );
+                }
+                if ( optimization != NPVoxOptimization.PER_FACE || voxMeshData[ voxIndex ].includeForward || voxMeshData[ voxIndex ].includeRight || voxMeshData[ voxIndex ].includeUp )
+                {
+                    voxMeshData[ voxIndex ].vertexIndexOffsets[ 7 ] = voxMeshData[ voxIndex ].numVertices++;
+                    voxMeshData[ voxIndex ].vertexPositionOffsets[ voxMeshData[ voxIndex ].vertexIndexOffsets[ 7 ] ] = new Vector3( 0.5f, 0.5f, 0.5f );
+                }
+                
+                currentVertexIndex += voxMeshData[ voxIndex ].numVertices;
+                voxIndex++;
+            }
+        }
+
+        Array.Resize( ref voxMeshData, voxIndex );
+
+        return voxMeshData;
     }
 }

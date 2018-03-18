@@ -10,7 +10,7 @@ public class NPVoxNormalProcessorPass_Variance : NPVoxNormalProcessorPass
     public int m_normalVarianceSeed;
     public Vector3 m_normalVariance;
 
-    public override void Process( NPVoxModel model, NPVoxMeshTempData tempdata, Vector3[] inNormals, ref Vector3[] outNormals )
+    public override void Process( NPVoxModel model, NPVoxMeshData tempdata, Vector3[] inNormals, ref Vector3[] outNormals )
     {
         // Compute normal variance
         float rX = UnityEngine.Random.value;

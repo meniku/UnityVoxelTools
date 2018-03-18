@@ -11,7 +11,7 @@ public class NPVoxNormalProcessorPass_Voxel : NPVoxNormalProcessorPass
     
     private static NPVoxBox voxelNormalNeighbours = new NPVoxBox(new NPVoxCoord(-1, -1, -1), new NPVoxCoord(1, 1, 1));
 
-    public override void Process( NPVoxModel model, NPVoxMeshTempData tempdata, Vector3[] inNormals, ref Vector3[] outNormals )
+    public override void Process( NPVoxModel model, NPVoxMeshData tempdata, Vector3[] inNormals, ref Vector3[] outNormals )
     {
         // calculate normals based on present neighbour voxels
         Vector3 voxelNormal = Vector3.zero;

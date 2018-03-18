@@ -85,7 +85,7 @@ public class NPVoxNormalProcessorList : ScriptableObject, ICloneable, ISerializa
         return m_processorList;
     }
 
-    public void Run(NPVoxModel model, NPVoxMeshTempData[] tempdata, Vector3[] inNormals, Vector3[] outNormals)
+    public void Run(NPVoxModel model, NPVoxMeshData[] tempdata, Vector3[] inNormals, Vector3[] outNormals)
     {
         foreach ( NPVoxNormalProcessor processor in m_processorList )
         {
@@ -104,6 +104,15 @@ public class NPVoxNormalProcessorList : ScriptableObject, ICloneable, ISerializa
             UnityEditor.EditorUtility.SetDirty( this );
         }
 
+        bool bInform = false;
+        foreach( NPVoxNormalProcessor p in m_processorList )
+        {
+            if ( bInform || p == processor )
+            {
+                bInform = true;
+                p.OnListChanged( this );
+            }
+        }
     }
 
     public void MoveProcessorDown( NPVoxNormalProcessor processor )
@@ -114,6 +123,16 @@ public class NPVoxNormalProcessorList : ScriptableObject, ICloneable, ISerializa
             m_processorList.Remove( processor );
             m_processorList.Insert( index + 1, processor );
             UnityEditor.EditorUtility.SetDirty( this );
+        }
+
+        bool bInform = false;
+        foreach ( NPVoxNormalProcessor p in m_processorList )
+        {
+            if ( bInform || p == processor )
+            {
+                bInform = true;
+                p.OnListChanged( this );
+            }
         }
     }
 

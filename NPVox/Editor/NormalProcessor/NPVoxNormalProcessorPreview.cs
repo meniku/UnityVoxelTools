@@ -29,9 +29,19 @@ public class NPVoxNormalProcessorPreview : EditorWindow
     int m_cameraType = 0;
 
     Matrix4x4 m_meshTransform = Matrix4x4.identity;
-    
+
+    static Material s_materialHandles = null;
+
+    static readonly Color s_colorBG = new Color( 0.3f, 0.3f, 0.3f );
+    static readonly Color s_colorBox = new Color( 0.5f, 0.5f, 0.5f );
+
     public static NPVoxNormalProcessorPreview ShowWindow()
     {
+        if ( s_materialHandles == null )
+        {
+            s_materialHandles = ( Material ) EditorGUIUtility.LoadRequired( "Assets/Vendor/UnityVoxelTools/NPVox/Materials/GL.mat" );
+        }
+
         return GetWindow<NPVoxNormalProcessorPreview>( "Normal Editor", true );
     }
 
@@ -64,7 +74,7 @@ public class NPVoxNormalProcessorPreview : EditorWindow
     {
         m_renderer = new PreviewRenderUtility();
         m_renderer.camera.clearFlags = CameraClearFlags.SolidColor;
-        m_renderer.camera.backgroundColor = new Color( 0.3f, 0.3f, 0.3f );
+        m_renderer.camera.backgroundColor = s_colorBG;
         m_renderer.cameraFieldOfView = 60.0f;
         m_renderer.camera.nearClipPlane = 0.3f;
         m_renderer.camera.farClipPlane = 1000.0f;
@@ -133,6 +143,10 @@ public class NPVoxNormalProcessorPreview : EditorWindow
             m_sensitivityDrag = NPipeGUILayout.HorizontalSlider( "Pan:", fLabelWidthSliders, m_sensitivityDrag, 0.01f, 1.0f, GUILayout.Width( 100.0f ) ); GUILayout.Space( -6 );
             m_sensitivityZoom = NPipeGUILayout.HorizontalSlider( "Zoom:", fLabelWidthSliders, m_sensitivityZoom, 0.01f, 1.0f, GUILayout.Width( 100.0f ) ); GUILayout.Space( -6 );
             GUILayout.Label( "______________________", noFill );
+
+            // Draw normal processor GUI
+            m_context.ViewedProcessor.OnPreviewGUI();
+
             GUILayout.EndVertical();
 
             // Draw preview
@@ -176,17 +190,43 @@ public class NPVoxNormalProcessorPreview : EditorWindow
     {
         m_renderer.camera.transform.position = new Vector3( 0, 0, -10 );
         m_renderer.camera.transform.LookAt( m_context.PreviewObject.transform );
+        m_context.m_camera = m_renderer.camera;
     }
 
     private void DrawScene( Rect _rect )
     {
         m_renderer.BeginPreview( _rect, GUIStyle.none );
 
-        m_renderer.DrawMesh( m_meshFilter.sharedMesh, m_meshTransform, m_meshRenderer.sharedMaterial, 0 );
+        m_renderer.DrawMesh( m_context.PreviewMesh, m_meshTransform, m_meshRenderer.sharedMaterial, 0 );
 
         m_renderer.camera.Render();
 
+        NPipeGL.PostRenderBegin( m_renderer.camera.projectionMatrix, m_renderer.camera.worldToCameraMatrix, s_materialHandles );
+
+        Transform t = m_context.PreviewObject.transform;
+        Bounds box = m_meshFilter.sharedMesh.bounds;
+        Vector3 extent = box.extents;
+
+        NPipeGL.DrawParallelepiped( 
+            t.position - new Vector3( extent.x, extent.z, extent.y ), 
+            new Vector3( box.size.x,    0,             0 ), 
+            new Vector3( 0,             box.size.z,    0 ), 
+            new Vector3( 0,             0,             box.size.y ), 
+            s_colorBox );
+
+        m_context.ViewedProcessor.OnPreviewScene( m_context, m_context.PreviewMesh );
+
+        NPipeGL.PostRenderEnd();
+
         GUI.DrawTexture( _rect, m_renderer.EndPreview() );
+    }
+
+    private void DrawLine( Vector3 _p1, Vector3 _p2, Color _color )
+    {
+        GL.Color( _color );
+        GL.Vertex( _p1 );
+        GL.Color( _color );
+        GL.Vertex( _p2 );
     }
 
     private void EnableSceneObjects( bool _bEnable )
@@ -247,6 +287,8 @@ public class NPVoxNormalProcessorPreview : EditorWindow
             default:
                 break;
         }
+
+        m_context.ViewedProcessor.OnPreviewInput( m_context, currentEvent, m_sceneRect );
     }
 
     void UpdateScene()

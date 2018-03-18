@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-[NPipeAppendableAttribute("Mesh Output", typeof(NPVoxIModelFactory), true, true)]
+[NPipeAppendableAttribute( "Mesh Output", typeof( NPVoxIModelFactory ), true, true )]
 public class NPVoxMeshOutput : NPVoxCompositeProcessorBase<NPVoxIModelFactory, Mesh>, NPVoxIMeshFactory, NPipeIInstantiable
 {
     public Vector3 VoxelSize = Vector3.one * 0.125f;
@@ -12,10 +12,12 @@ public class NPVoxMeshOutput : NPVoxCompositeProcessorBase<NPVoxIModelFactory, M
     public int BloodColorIndex = 0;
     public NPVoxFaces Loop = new NPVoxFaces();
     public NPVoxFaces Cutout = new NPVoxFaces();
-    public NPVoxFaces Include = new NPVoxFaces(1, 1, 1, 1, 1, 1);
+    public NPVoxFaces Include = new NPVoxFaces( 1, 1, 1, 1, 1, 1 );
     public int MinVertexGroups = 1;
     public NPVoxNormalMode[] NormalModePerVoxelGroup = null;
     public NPVoxNormalProcessorList NormalProcessors = null;
+
+    private NPVoxMeshData[] m_voxMeshData = null;
 
     public void OnEnable()
     {
@@ -197,5 +199,15 @@ public class NPVoxMeshOutput : NPVoxCompositeProcessorBase<NPVoxIModelFactory, M
 
             NormalProcessors.RequiresMigration = false;
         }
+    }
+
+    public NPVoxMeshData[] GetVoxMeshData()
+    {
+        if ( m_voxMeshData == null )
+        {
+            m_voxMeshData = NPVoxMeshGenerator.GenerateVoxMeshData( GetVoxModel(), VoxelSize, Optimization, BloodColorIndex, Loop, Cutout, Include );
+        }
+
+        return m_voxMeshData;
     }
 }
