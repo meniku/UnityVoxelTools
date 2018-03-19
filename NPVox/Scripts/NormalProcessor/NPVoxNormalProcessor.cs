@@ -66,17 +66,8 @@ public abstract class NPVoxNormalProcessor : ScriptableObject, ICloneable
     [SerializeField]
     protected List<int> m_voxelGroupFilter;
     
-    // GUI variables
     [NonSerialized]
     protected List<NPVoxNormalProcessorPreviewContext> m_validPreviewContexts;
-    protected bool m_previewGUIDrawOutlines = false;
-    protected bool m_previewGUIDrawNormals = false;
-    //
-
-    private bool[] m_mouseDown = { false, false, false };
-    private Ray m_rayA = new Ray( Vector3.zero, Vector3.zero );
-    private Ray m_rayB = new Ray( Vector3.zero, Vector3.zero );
-    NPVoxCoord m_selected = new NPVoxCoord();
 
     public List<NPVoxNormalProcessorPass> Passes
     {
@@ -204,135 +195,6 @@ public abstract class NPVoxNormalProcessor : ScriptableObject, ICloneable
     }
 
     protected abstract void OnGUIInternal();
-
-    public void OnPreviewScene( NPVoxNormalProcessorPreviewContext _context, Mesh _previewMesh )
-    {
-        // General handling
-
-        NPVoxMeshData[] voxMeshData = _context.MeshOutput.GetVoxMeshData();
-        Vector3 voxSize = _context.MeshOutput.VoxelSize;
-        Vector3 voxExtent = voxSize * 0.5f;
-        Color c = new Color( 0.3f, 0.3f, 0.3f );
-
-        Vector3 v1 = new Vector3( voxSize.x, 0, 0 );
-        Vector3 v2 = new Vector3( 0, voxSize.y, 0 );
-        Vector3 v3 = new Vector3( 0, 0, voxSize.z );
-
-        foreach ( NPVoxMeshData vox in voxMeshData )
-        {
-            if ( !vox.isHidden )
-            {
-                if ( m_previewGUIDrawOutlines )
-                {
-                    Vector3 voxPosition = new Vector3( vox.voxelCenter.x, -vox.voxelCenter.z, vox.voxelCenter.y );
-                    NPipeGL.DrawParallelepiped( voxPosition - voxExtent, v1, v2, v3, c );
-                }
-
-                if ( m_previewGUIDrawNormals )
-                {
-
-                }
-            }
-        }
-        
-        if ( m_rayA.direction.sqrMagnitude > 0 )
-        {
-            NPipeGL.DrawLine( m_rayA.origin, m_rayA.origin + m_rayA.direction * 10, Color.red );
-        }
-        if ( m_rayB.direction.sqrMagnitude > 0 )
-        {
-            NPipeGL.DrawLine( m_rayB.origin, m_rayB.origin + m_rayB.direction * 10, Color.green );
-        }
-
-        if ( m_selected.Valid )
-        {
-            NPVoxToUnity voxToUnity = new NPVoxToUnity( _context.MeshOutput.GetVoxModel(), _context.MeshOutput.VoxelSize );
-            Vector3 voxPosition = voxToUnity.ToUnityPosition( m_selected );
-            NPipeGL.DrawParallelepiped( voxPosition - voxExtent, v1, v2, v3, Color.red );
-        }
-
-        // Specialized handling for sub classes
-        OnPreviewSceneInternal( _context, _previewMesh );
-    }
-
-    protected virtual void OnPreviewSceneInternal( NPVoxNormalProcessorPreviewContext _context, Mesh _previewMesh )
-    {
-    }
-
-    public virtual void OnPreviewInput( NPVoxNormalProcessorPreviewContext _context, Event _event, Rect _rect )
-    {
-        switch ( _event.type )
-        {
-            case EventType.MouseDown:
-                if ( _rect.Contains( _event.mousePosition ) )
-                {
-                    m_mouseDown[ _event.button ] = true;
-                    HandleRays( _context, _event, _rect );
-                }
-                break;
-
-            case EventType.MouseUp:
-                m_mouseDown[ _event.button ] = false;
-                break;
-
-            case EventType.MouseDrag:
-                HandleRays( _context, _event, _rect );
-                break;
-
-            case EventType.ScrollWheel:
-                break;
-
-            default:
-                break;
-        }
-    }
-
-    private void HandleRays( NPVoxNormalProcessorPreviewContext _context, Event _event, Rect _rect )
-    {
-        Vector2 rayScreenPosition = new Vector2( _event.mousePosition.x - _rect.xMin, _rect.height - ( _event.mousePosition.y - _rect.yMin ) );
-
-        if ( m_mouseDown[ 0 ] )
-        {
-            if ( _event.shift )
-            {
-                m_rayA = _context.m_camera.ScreenPointToRay( rayScreenPosition );
-                NPVoxToUnity voxToUnity = new NPVoxToUnity( _context.MeshOutput.GetVoxModel(), _context.MeshOutput.VoxelSize );
-                NPVoxRayCastHit hit = voxToUnity.Raycast( m_rayA, _context.PreviewObject.transform, 10 );
-                if ( hit.IsHit )
-                {
-                    m_selected = hit.Coord;
-                }
-            }
-            else if ( _event.control )
-            {
-                m_rayB = _context.m_camera.ScreenPointToRay( rayScreenPosition );
-            }
-        }
-    }
-
-    public void OnPreviewGUI()
-    {
-        GUIStyle noStretch = new GUIStyle();
-        noStretch.stretchWidth = false;
-        noStretch.stretchHeight = false;
-        GUILayoutOption[] noFill = { GUILayout.ExpandWidth( false ), GUILayout.ExpandHeight( false ) };
-        GUILayoutOption[] fill = { GUILayout.ExpandWidth( true ), GUILayout.ExpandHeight( true ) };
-
-        if ( GUILayout.Button( m_previewGUIDrawOutlines ? "Hide Outlines" : "Show Outlines", noFill ) )
-        {
-            m_previewGUIDrawOutlines = !m_previewGUIDrawOutlines;
-        }
-
-        if ( GUILayout.Button( m_previewGUIDrawNormals ? "Hide Normals" : "Show Normals", noFill ) )
-        {
-            m_previewGUIDrawNormals = !m_previewGUIDrawNormals;
-        }
-    }
-
-    protected virtual void OnPreviewGUIInternal()
-    {
-    }
-
 
     protected PASS_TYPE AddPass<PASS_TYPE>() where PASS_TYPE : NPVoxNormalProcessorPass, new()
     {

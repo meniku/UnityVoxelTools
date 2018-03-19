@@ -44,13 +44,4 @@ public class NPVoxNormalProcessor_UserOverride : NPVoxNormalProcessor
     public override void OnListChanged( NPVoxNormalProcessorList _list )
     {
     }
-
-    protected override void OnPreviewSceneInternal( NPVoxNormalProcessorPreviewContext _context, Mesh _previewMesh )
-    {
-    }
-
-    public override void OnPreviewInput( NPVoxNormalProcessorPreviewContext _context, Event _event, Rect _rect )
-    {
-       
-    }
 }

@@ -42,4 +42,17 @@ public class NPipeReflectionUtil
         }
         return null;
     }
+
+    public static TypeAttribute GetAttribute<TypeAttribute>( System.Type _type ) where TypeAttribute : System.Attribute
+    {
+        foreach ( object attribute in _type.GetCustomAttributes( true ) )
+        {
+            TypeAttribute candidate = attribute as TypeAttribute;
+            if ( candidate != null )
+            {
+                return candidate;
+            }
+        }
+        return null;
+    }
 }

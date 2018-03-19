@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
-
 public enum NPVoxNormalProcessorType
 {
     Generator,     // Generates normals from scratch -> Should be the first in a processor list, as it overrides previous results
@@ -17,16 +16,27 @@ public class NPVoxAttributeNormalProcessorListItem : System.Attribute
     public NPVoxNormalProcessorType ProcessorType;
     public int ListPriority;
 
-    public NPVoxAttributeNormalProcessorListItem( string editorName, System.Type classType, NPVoxNormalProcessorType processorType )
+    public NPVoxAttributeNormalProcessorListItem( string _editorName, System.Type _classType, NPVoxNormalProcessorType _processorType )
     {
-        Name = editorName;
-        ClassType = classType;
-        ProcessorType = processorType;
-        ListPriority = processorType == NPVoxNormalProcessorType.Generator ? 0 : 1;
+        Name = _editorName;
+        ClassType = _classType;
+        ProcessorType = _processorType;
+        ListPriority = _processorType == NPVoxNormalProcessorType.Generator ? 0 : 1;
     }
 
     public string EditorName
     {
         get { return ProcessorType.ToString() + ": " + Name; }
+    }
+}
+
+[System.AttributeUsage( System.AttributeTargets.Class )]
+public class NPVoxAttributeNormalProcessorPreview : System.Attribute
+{
+    public System.Type ProcessorType;
+
+    public NPVoxAttributeNormalProcessorPreview( System.Type _processorType )
+    {
+        ProcessorType = _processorType;
     }
 }

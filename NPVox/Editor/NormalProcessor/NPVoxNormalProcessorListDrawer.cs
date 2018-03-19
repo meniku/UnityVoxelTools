@@ -124,15 +124,7 @@ public class NPVoxNormalProcessorListDrawer : PropertyDrawer
 
                 if ( GUILayout.Button( "View / Edit" ) )
                 {
-                    //NPVoxNormalProcessorView view = NPVoxNormalProcessorView.ShowWindow();
-
-                    //string strAssetPath = AssetDatabase.GetAssetPath( target );
-                    //string[] guids = AssetDatabase.GetDependencies( strAssetPath );
-
-                    //view.SetContext( target, processor );
-
-                    NPVoxNormalProcessorPreview preview = NPVoxNormalProcessorPreview.ShowWindow();
-
+                    NPVoxNormalProcessorPreview preview = NPVoxNormalProcessorPreview.ShowWindow( processor.GetType() );
                     preview.SetContext( processor.GeneratePreviewContext( target ) );
                 }
                 
@@ -148,7 +140,7 @@ public class NPVoxNormalProcessorListDrawer : PropertyDrawer
                     itemToMoveDown = processor;
                 }
 
-                if ( GUILayout.Button( "X" , GUILayout.Width(s_widthUpDownButton), GUILayout.ExpandWidth(true) ) )
+                if ( GUILayout.Button( "X" , GUILayout.Width(s_widthUpDownButton), GUILayout.ExpandWidth( true ) ) )
                 {
                     processorList.DestroyProcessor( processor );
                     break;
