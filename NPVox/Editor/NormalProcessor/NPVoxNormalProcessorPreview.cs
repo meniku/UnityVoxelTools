@@ -70,7 +70,7 @@ public class NPVoxNormalProcessorPreview : EditorWindow
         return GetWindow<NPVoxNormalProcessorPreview>( "Normal Editor", true );
     }
 
-    public void SetContext( NPVoxNormalProcessorPreviewContext _context )
+    public virtual void SetContext( NPVoxNormalProcessorPreviewContext _context )
     {
         if ( m_context != null )
         {
@@ -152,7 +152,6 @@ public class NPVoxNormalProcessorPreview : EditorWindow
     {
         m_meshFilter = _object.GetComponent<MeshFilter>();
         m_meshRenderer = _object.GetComponent<MeshRenderer>();
-        m_meshTransform = Matrix4x4.Rotate( Quaternion.Euler(90, 0, 0) );
     }
 
     private void InitCamera()
@@ -203,7 +202,8 @@ public class NPVoxNormalProcessorPreview : EditorWindow
             {
                 m_previewGUIDrawNormals = !m_previewGUIDrawNormals;
             }
-            
+
+            GUILayout.Label( "______________________", noFill );
             OnGUIInternal();
 
             GUILayout.EndVertical();
@@ -255,10 +255,10 @@ public class NPVoxNormalProcessorPreview : EditorWindow
             Vector3 extent = box.extents;
 
             NPipeGL.DrawParallelepiped(
-                t.position - new Vector3( extent.x, extent.z, extent.y ),
+                t.position - new Vector3( extent.x, extent.y, extent.z ),
                 new Vector3( box.size.x, 0, 0 ),
-                new Vector3( 0, box.size.z, 0 ),
-                new Vector3( 0, 0, box.size.y ),
+                new Vector3( 0, box.size.y, 0 ),
+                new Vector3( 0, 0, box.size.z ),
                 s_colorBox );
 
             NPVoxMeshData[] voxMeshData = m_context.MeshOutput.GetVoxMeshData();
@@ -276,7 +276,7 @@ public class NPVoxNormalProcessorPreview : EditorWindow
                 {
                     if ( m_previewGUIDrawOutlines )
                     {
-                        Vector3 voxPosition = new Vector3( vox.voxelCenter.x, -vox.voxelCenter.z, vox.voxelCenter.y );
+                        Vector3 voxPosition = new Vector3( vox.voxelCenter.x, vox.voxelCenter.y, vox.voxelCenter.z );
                         NPipeGL.DrawParallelepiped( voxPosition - voxExtent, v1, v2, v3, c );
                     }
 

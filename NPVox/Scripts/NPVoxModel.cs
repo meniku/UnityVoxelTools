@@ -243,9 +243,19 @@ public class NPVoxModel : ScriptableObject
         return this.voxelGroups[GetIndex(coord)];
     }
 
-    protected int GetIndex(NPVoxCoord coord)
+    public int GetIndex(NPVoxCoord coord)
     {
         return (coord.X + coord.Z * size.X + coord.Y * size.X * size.Z);
+    }
+
+    public NPVoxCoord GetVoxCoord(int index)
+    {
+        int y =  index / ( size.X * size.Z );
+        int j = index % ( size.X * size.Z );
+        int z = j / size.X;
+        int x = j % Size.X;
+
+        return new NPVoxCoord( (sbyte) x, ( sbyte ) y, ( sbyte ) z );
     }
 
     public NPVoxCoord LoopCoord(NPVoxCoord coord, NPVoxFaces loop)

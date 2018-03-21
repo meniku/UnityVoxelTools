@@ -136,6 +136,40 @@ public class NPVoxNormalProcessorList : ScriptableObject, ICloneable, ISerializa
         }
     }
 
+    public NPVoxNormalProcessor GetPreviousInList( NPVoxNormalProcessor _processor )
+    {
+        NPVoxNormalProcessor previous = null;
+        foreach ( NPVoxNormalProcessor processor in m_processorList )
+        {
+            if ( processor == _processor )
+            {
+                return previous;
+            }
+
+            previous = processor;
+        }
+        return previous;
+    }
+
+    public NPVoxNormalProcessor GetNextInList( NPVoxNormalProcessor _processor )
+    {
+        NPVoxNormalProcessor previous = null;
+        foreach ( NPVoxNormalProcessor processor in m_processorList )
+        {
+            if ( previous != null )
+            {
+                return processor;
+            }
+
+            if ( processor == _processor )
+            {
+                previous = processor;
+            }
+        }
+
+        return null;
+    }
+
     public object Clone()
     {
         NPVoxNormalProcessorList clone = ScriptableObject.CreateInstance<NPVoxNormalProcessorList>();

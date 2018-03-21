@@ -13,6 +13,8 @@ public class NPVoxNormalProcessorPreviewContext : ScriptableObject
     public Mesh PreviewMesh                     { get; private set; }
     public bool IsValid                         { get; private set; }
 
+    public NPVoxToUnity VoxToUnity              { get; private set; }
+
     public Camera m_camera = null;
 
     void OnEnable()
@@ -39,6 +41,8 @@ public class NPVoxNormalProcessorPreviewContext : ScriptableObject
         ViewedProcessor = _processor;
         PreviewObject = MeshOutput.Instatiate();
 
+        VoxToUnity = new NPVoxToUnity( MeshOutput.GetVoxModel(), MeshOutput.VoxelSize );
+
         MeshFilter mf = PreviewObject.GetComponent<MeshFilter>();
         PreviewMesh = Mesh.Instantiate<Mesh>( mf.sharedMesh );
         mf.sharedMesh = PreviewMesh;
@@ -58,7 +62,7 @@ public abstract class NPVoxNormalProcessorPass
 public abstract class NPVoxNormalProcessor : ScriptableObject, ICloneable
 {
     protected readonly float GUITabWidth = 40.0f;
-
+    
     protected Vector3[] m_normalOutput;
     
     protected List<NPVoxNormalProcessorPass> m_passes = null;
@@ -262,5 +266,24 @@ public abstract class NPVoxNormalProcessor : ScriptableObject, ICloneable
 
     public virtual void OnListChanged( NPVoxNormalProcessorList _list )
     {
+        m_normalOutput = null;
+
+        NPVoxNormalProcessorPreviewContext[] contexts = m_validPreviewContexts.ToArray();
+        foreach ( NPVoxNormalProcessorPreviewContext context in contexts )
+        {
+            context.Invalidate();
+        }
+
+        ClearInvalidPreviewContexts();
+    }
+
+    public bool IsOutputValid()
+    {
+        return ( m_normalOutput != null && m_normalOutput.Length > 0 );
+    }
+
+    public Vector3[] GetOutput()
+    {
+        return m_normalOutput;
     }
 }
