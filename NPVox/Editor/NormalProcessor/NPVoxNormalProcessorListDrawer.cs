@@ -35,6 +35,7 @@ public class NPVoxNormalProcessorListDrawer : PropertyDrawer
         Color previousBGColor = GUI.backgroundColor;
         Color previousFGColor = GUI.contentColor;
         GUI.backgroundColor = s_colorBackgroundGUIPrimary;
+        GUI.backgroundColor = s_colorBackgroundGUIPrimary;
         // GUI.contentColor = s_colorForegroundGUI; // Doesn't seem to work
 
         // Header + Expand / Collapse Button

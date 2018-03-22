@@ -18,6 +18,10 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
 
     private static sbyte m_currentSelectionMode = UNSELECTED;
 
+    private Vector3 m_normalField = Vector3.zero;
+
+    private Dictionary<int, Vector3> m_normalStage = new Dictionary<int, Vector3>();
+
     public override void SetContext( NPVoxNormalProcessorPreviewContext _context )
     {
         base.SetContext( _context );
@@ -35,20 +39,75 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
         GUIStyle noStretch = new GUIStyle();
         noStretch.stretchWidth = false;
         noStretch.stretchHeight = false;
+        GUILayoutOption widthSmallButton = GUILayout.Width( 65 );
+        GUILayoutOption widthWideButton = GUILayout.Width( 203 );
         GUILayoutOption[] noFill = { GUILayout.ExpandWidth( false ), GUILayout.ExpandHeight( false ) };
         GUILayoutOption[] fill = { GUILayout.ExpandWidth( true ), GUILayout.ExpandHeight( true ) };
-        Color backgroundColorWarning = new Color( 0.8f, 0.3f, 0.3f );
-        
-
+        Color bgColorWarning = new Color( 0.8f, 0.3f, 0.3f );
+        Color bgColorTarget = new Color( 0.9f, 0.4f, 0.4f );
+        Color bgColorInput = new Color( 0.5f, 0.7f, 0.9f );
 
         if ( m_context.ViewedProcessor.IsOutputValid() )
         {
+            GUILayout.Space( 12.0f );
+            Color currentColor = GUI.backgroundColor;
+            GUI.backgroundColor = bgColorInput;
+            GUILayout.Label( "INPUT:", noFill );
+            GUILayout.Space( -3 );
+            m_normalField = EditorGUILayout.Vector3Field( "", m_normalField, noFill );
+            GUILayout.Space( -3 );
+            GUILayout.BeginHorizontal( noStretch, noFill );
+            if ( GUILayout.Button( "RIGHT", widthSmallButton ) ) { m_normalField = Vector3.right; }
+            if ( GUILayout.Button( "UP", widthSmallButton ) ) { m_normalField = Vector3.up; }
+            if ( GUILayout.Button( "FWD", widthSmallButton ) ) { m_normalField = Vector3.forward; }
+            GUILayout.EndHorizontal();
+            GUILayout.Space( -4 );
+            GUILayout.BeginHorizontal( noStretch, noFill );
+            if ( GUILayout.Button( "LEFT", widthSmallButton ) ) { m_normalField = Vector3.left; }
+            if ( GUILayout.Button( "DOWN", widthSmallButton ) ) { m_normalField = Vector3.down; }
+            if ( GUILayout.Button( "BACK", widthSmallButton ) ) { m_normalField = Vector3.back; }
+            GUILayout.EndHorizontal();
+            GUILayout.Space( -4 );
+            GUILayout.BeginHorizontal( noStretch, noFill );
+            if ( GUILayout.Button( "Normalize", widthWideButton ) ) { m_normalField = m_normalField.normalized; }
+            GUILayout.EndHorizontal();
+            GUI.backgroundColor = currentColor;
 
+            GUILayout.Space( 12.0f );
+            currentColor = GUI.backgroundColor;
+            GUI.backgroundColor = bgColorTarget;
+            if ( GUILayout.Button( "INPUT to TARGET", widthWideButton ) )
+            {
+                List<int> indices = GetSelectedIndices( SELECTED_TARGET );
+                foreach ( int i in indices )
+                {
+                    m_normalStage.Add( i, m_normalField );
+                }
+                ApplyNormalStage();
+                m_normalStage.Clear();
+            }
+
+            if ( GUILayout.Button( "SRC average to TARGET", widthWideButton ) )
+            {
+            }
+
+            if ( GUILayout.Button( "Neighbor average to TARGET", widthWideButton ) )
+            {
+                // TODO: Apply normals
+            }
+            
+            GUI.backgroundColor = currentColor;
+
+            GUILayout.Space( 12.0f );
+            if ( GUILayout.Button( "RESET SELECTION", widthWideButton ) )
+            {
+                ResetSelection();
+            }
         }
         else
         {
             Color currentColor = GUI.backgroundColor;
-            GUI.backgroundColor = backgroundColorWarning;
+            GUI.backgroundColor = bgColorWarning;
             if ( GUILayout.Button( "Recalculate normals", noFill ) )
             {
 
@@ -179,6 +238,49 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
         {
             m_selections[ i ] = 0x00;
         }
+    }
+
+    private void ApplyNormalStage()
+    {
+        NPVoxModel voxModel = m_context.MeshOutput.GetVoxModel();
+        Vector3[] normals = m_context.PreviewMesh.normals;
+
+        foreach ( NPVoxMeshData vox in m_context.MeshOutput.GetVoxMeshData() )
+        {
+            if ( !vox.isHidden )
+            {
+                NPVoxCoord coord = vox.voxCoord;
+                if ( GetSelection( coord ) == SELECTED_TARGET )
+                {
+                    // TODO: Apply to normal processor
+
+                    int index = voxModel.GetIndex( coord );
+
+                    for ( int i = 0; i < vox.numVertices; i++ )
+                    {
+                        normals[ vox.vertexIndexOffsetBegin + i ] = m_normalStage[ index ];
+                    }
+                }
+            }
+        }
+
+        m_context.PreviewMesh.normals = normals;
+    }
+
+    private List<int> GetSelectedIndices( sbyte _selectionType )
+    {
+        List<int> indices = new List<int>();
+        foreach ( NPVoxMeshData vox in m_context.MeshOutput.GetVoxMeshData() )
+        {
+            if ( !vox.isHidden )
+            {
+                if ( GetSelection( vox.voxCoord ) == _selectionType )
+                {
+                    indices.Add( m_context.MeshOutput.GetVoxModel().GetIndex( vox.voxCoord ) );
+                }
+            }
+        }
+        return indices;
     }
 
     private sbyte GetSelection( NPVoxCoord _coord )
