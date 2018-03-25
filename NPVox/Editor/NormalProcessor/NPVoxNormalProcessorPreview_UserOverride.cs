@@ -109,7 +109,8 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
             GUILayout.Space( 12.0f );
             currentColor = GUI.backgroundColor;
             GUI.backgroundColor = bgColorTarget;
-            if ( GUILayout.Button( "INPUT to TARGET", widthWideButton ) )
+            GUILayout.Label( "APPLY TO TARGET:", noFill );
+            if ( GUILayout.Button( "Input Field", widthWideButton ) )
             {
                 List<int> indices = GetSelectedIndices( SELECTED_TARGET );
                 foreach ( int i in indices )
@@ -118,9 +119,10 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
                 }
                 ApplyNormalStage();
                 m_normalStage.Clear();
+                ResetSelection();
             }
 
-            if ( GUILayout.Button( "SRC average to TARGET", widthWideButton ) )
+            if ( GUILayout.Button( "Source", widthWideButton ) )
             {
                 Vector3 average = Vector3.zero;
                 bool success = ComputeSourceAverage( ref average );
@@ -138,12 +140,13 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
                     }
                     ApplyNormalStage();
                     m_normalStage.Clear();
+                    ResetSelection();
                 }
             }
             
-            if ( GUILayout.Button( "Neighbor average to TARGET", widthWideButton ) )
+            if ( GUILayout.Button( "Neighbors", widthWideButton ) )
             {
-                // TODO: Apply normals
+                // TODO: Apply normals from neighbors
             }
             
             GUI.backgroundColor = currentColor;
@@ -157,11 +160,14 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
             GUILayout.BeginVertical( GUILayout.ExpandWidth( false ), GUILayout.ExpandHeight( true ) );
             GUILayout.EndVertical();
 
-            if ( GUILayout.Button( "RESET ALL OVERRIDES", widthWideButton ) )
+            if ( GUILayout.Button( "RESET SELECTED OVERRIDES", widthWideButton ) )
             {
+                // TODO: Apply normals
             }
 
-            if ( GUILayout.Button( "RESET SELECTED OVERRIDES", widthWideButton ) )
+            GUILayout.Space( 12.0f );
+
+            if ( GUILayout.Button( "RESET ALL OVERRIDES", widthWideButton ) )
             {
                 NPVoxNormalProcessor_UserOverride processor = ( NPVoxNormalProcessor_UserOverride ) m_context.ViewedProcessor;
                 processor.m_overrideNormalsRT.Clear();
