@@ -8,7 +8,7 @@ using UnityEngine;
 // https://answers.unity.com/questions/424974/nearest-point-on-mesh.html
 // https://gamedev.stackexchange.com/questions/131851/clamp-point-to-triangle-for-sphere-collision
 
-namespace MathUtilites
+namespace MathUtilities
 {
     public class LinearAlgebra
     {

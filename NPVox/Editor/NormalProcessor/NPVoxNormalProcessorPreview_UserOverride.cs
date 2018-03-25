@@ -6,10 +6,6 @@ using UnityEngine;
 [ NPVoxAttributeNormalProcessorPreview( typeof( NPVoxNormalProcessor_UserOverride ) ) ]
 public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPreview
 {
-    private Ray m_rayA = new Ray( Vector3.zero, Vector3.zero );
-    private Ray m_rayB = new Ray( Vector3.zero, Vector3.zero );
-    private NPVoxCoord m_selected = new NPVoxCoord(-1, -1, -1);
-
     private sbyte[] m_selections;
 
     private const sbyte UNSELECTED = 0x00;
@@ -32,6 +28,43 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
         {
             m_selections[ i ] = UNSELECTED;
         }
+
+        InitMeshNormals();
+    }
+
+    private void InitMeshNormals()
+    {
+        NPVoxMeshData[] voxMeshData = m_context.MeshOutput.GetVoxMeshData();
+        NPVoxNormalProcessor previousProcessor = m_context.MeshOutput.NormalProcessors.GetPreviousInList( m_context.ViewedProcessor );
+
+        Vector3[] normals = null;
+
+        if ( previousProcessor == null || !previousProcessor.IsOutputValid() )
+        {
+            normals = new Vector3[ m_context.PreviewMesh.normals.Length ];
+            for ( int i = 0; i < normals.Length; i++ )
+            {
+                normals[ i ] = Vector3.zero;
+            }
+
+            if ( previousProcessor != null )
+            {
+                m_context.MeshOutput.NormalProcessors.Run( m_context.MeshOutput.GetVoxModel(), voxMeshData, normals, normals, previousProcessor );
+            }
+        }
+        else
+        {
+            normals = previousProcessor.GetOutputCopy();
+        }
+
+        m_context.ViewedProcessor.InitOutputBuffer( normals.Length );
+        m_context.ViewedProcessor.Process( m_context.MeshOutput.GetVoxModel(), voxMeshData, normals, normals );
+        Vector3[] meshNormals = m_context.PreviewMesh.normals;
+        for ( int i = 0; i < meshNormals.Length; i++ )
+        {
+            meshNormals[ i ] = normals[ i ];
+        }
+        m_context.PreviewMesh.normals = meshNormals;
     }
 
     protected override void OnGUIInternal()
@@ -89,8 +122,25 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
 
             if ( GUILayout.Button( "SRC average to TARGET", widthWideButton ) )
             {
-            }
+                Vector3 average = Vector3.zero;
+                bool success = ComputeSourceAverage( ref average );
+                if ( average.sqrMagnitude > 0 )
+                {
+                    average = average.normalized;
+                }
 
+                if ( success )
+                {
+                    List<int> indices = GetSelectedIndices( SELECTED_TARGET );
+                    foreach ( int i in indices )
+                    {
+                        m_normalStage.Add( i, average );
+                    }
+                    ApplyNormalStage();
+                    m_normalStage.Clear();
+                }
+            }
+            
             if ( GUILayout.Button( "Neighbor average to TARGET", widthWideButton ) )
             {
                 // TODO: Apply normals
@@ -103,6 +153,22 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
             {
                 ResetSelection();
             }
+
+            GUILayout.BeginVertical( GUILayout.ExpandWidth( false ), GUILayout.ExpandHeight( true ) );
+            GUILayout.EndVertical();
+
+            if ( GUILayout.Button( "RESET ALL OVERRIDES", widthWideButton ) )
+            {
+            }
+
+            if ( GUILayout.Button( "RESET SELECTED OVERRIDES", widthWideButton ) )
+            {
+                NPVoxNormalProcessor_UserOverride processor = ( NPVoxNormalProcessor_UserOverride ) m_context.ViewedProcessor;
+                processor.m_overrideNormalsRT.Clear();
+                InitMeshNormals();
+            }
+
+            GUILayout.Space( 12.0f );
         }
         else
         {
@@ -110,7 +176,7 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
             GUI.backgroundColor = bgColorWarning;
             if ( GUILayout.Button( "Recalculate normals", noFill ) )
             {
-
+                InitMeshNormals();
             }
             GUI.backgroundColor = currentColor;
         }
@@ -125,12 +191,6 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
             Vector3 v1 = new Vector3( voxSize.x, 0, 0 );
             Vector3 v2 = new Vector3( 0, voxSize.y, 0 );
             Vector3 v3 = new Vector3( 0, 0, voxSize.z );
-
-            //if ( m_selected.Valid )
-            //{
-            //    Vector3 voxPosition = m_context.VoxToUnity.ToUnityPosition( m_selected );
-            //    NPipeGL.DrawParallelepiped( voxPosition - voxExtent, v1, v2, v3, Color.red );
-            //}
 
             NPVoxMeshData[] voxMeshData = m_context.MeshOutput.GetVoxMeshData();
 
@@ -245,26 +305,89 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
         NPVoxModel voxModel = m_context.MeshOutput.GetVoxModel();
         Vector3[] normals = m_context.PreviewMesh.normals;
 
+        NPVoxNormalProcessor_UserOverride processor = ( NPVoxNormalProcessor_UserOverride ) m_context.ViewedProcessor;
+
         foreach ( NPVoxMeshData vox in m_context.MeshOutput.GetVoxMeshData() )
         {
             if ( !vox.isHidden )
             {
                 NPVoxCoord coord = vox.voxCoord;
+                int index = voxModel.GetIndex( coord );
+
                 if ( GetSelection( coord ) == SELECTED_TARGET )
                 {
-                    // TODO: Apply to normal processor
-
-                    int index = voxModel.GetIndex( coord );
-
                     for ( int i = 0; i < vox.numVertices; i++ )
                     {
+                        processor.m_overrideNormalsRT[ vox.vertexIndexOffsetBegin + i ] = m_normalStage[ index ];
                         normals[ vox.vertexIndexOffsetBegin + i ] = m_normalStage[ index ];
                     }
                 }
             }
         }
 
+        RemoveRedundantOverrides();
+
+        UnityEditor.EditorUtility.SetDirty( processor );
+
         m_context.PreviewMesh.normals = normals;
+    }
+
+    private void RemoveRedundantOverrides()
+    {
+        List<int> overridesToRemove = new List<int>();
+
+        NPVoxNormalProcessor_UserOverride processor = ( NPVoxNormalProcessor_UserOverride ) m_context.ViewedProcessor;
+        NPVoxNormalProcessor previous = m_context.MeshOutput.NormalProcessors.GetPreviousInList( processor );
+
+        foreach ( NPVoxMeshData vox in m_context.MeshOutput.GetVoxMeshData() )
+        {
+            if ( !vox.isHidden )
+            {
+                for ( int i = 0; i < vox.numVertices; i++ )
+                {
+                    Vector3 normal = Vector3.zero;
+                    if ( previous != null )
+                    {
+                        normal = previous.GetOutput()[ vox.vertexIndexOffsetBegin + i ];
+                    }
+
+                    if ( processor.m_overrideNormalsRT.ContainsKey( vox.vertexIndexOffsetBegin + i ) && processor.m_overrideNormalsRT[ vox.vertexIndexOffsetBegin + i ] == normal )
+                    {
+                        overridesToRemove.Add( vox.vertexIndexOffsetBegin + i );
+                    }
+                }
+            }
+        }
+
+        foreach( int i in overridesToRemove )
+        {
+            processor.m_overrideNormalsRT.Remove( i );
+        }
+    }
+
+    private bool ComputeSourceAverage( ref Vector3 _out )
+    {
+        NPVoxModel voxModel = m_context.MeshOutput.GetVoxModel();
+        List<Vector3> normalsSum = new List<Vector3>();
+
+        Vector3[] normalsMesh = m_context.PreviewMesh.normals;
+
+        foreach ( NPVoxMeshData vox in m_context.MeshOutput.GetVoxMeshData() )
+        {
+            if ( !vox.isHidden )
+            {
+                NPVoxCoord coord = vox.voxCoord;
+                int index = voxModel.GetIndex( coord );
+
+                if ( GetSelection( coord ) == SELECTED_SOURCE )
+                {
+                    normalsSum.Add( normalsMesh[ vox.vertexIndexOffsetBegin ] );
+                }
+            }
+        }
+        
+        bool bResult = MathUtilities.Statistical.ComputeAverage( normalsSum, ref _out );
+        return bResult;
     }
 
     private List<int> GetSelectedIndices( sbyte _selectionType )

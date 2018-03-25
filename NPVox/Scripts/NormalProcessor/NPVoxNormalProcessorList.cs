@@ -87,10 +87,27 @@ public class NPVoxNormalProcessorList : ScriptableObject, ICloneable, ISerializa
 
     public void Run(NPVoxModel model, NPVoxMeshData[] tempdata, Vector3[] inNormals, Vector3[] outNormals)
     {
+        inNormals.CopyTo( outNormals, 0 );
+
         foreach ( NPVoxNormalProcessor processor in m_processorList )
         {
-            processor.InitOutputBuffer(inNormals);
-            processor.Process(model, tempdata, inNormals, outNormals);
+            processor.InitOutputBuffer( outNormals.Length );
+            processor.Process(model, tempdata, outNormals, outNormals);
+        }
+    }
+
+    public void Run( NPVoxModel model, NPVoxMeshData[] tempdata, Vector3[] inNormals, Vector3[] outNormals, NPVoxNormalProcessor end )
+    {
+        inNormals.CopyTo( outNormals, 0 );
+
+        foreach ( NPVoxNormalProcessor processor in m_processorList )
+        {
+            processor.InitOutputBuffer( inNormals.Length );
+            processor.Process( model, tempdata, outNormals, outNormals );
+            if ( processor == end )
+            {
+                break;
+            }
         }
     }
 

@@ -22,7 +22,7 @@ public class NPVoxNormalProcessorPreview : EditorWindow
     protected Vector2 m_mouseRotate = Vector2.zero;
     protected Vector2 m_mousePan = Vector2.zero;
     protected float m_mouseZoom = 0.0f;
-    protected float m_sensitivityDrag = 0.1f;
+    protected float m_sensitivityDrag = 0.05f;
     protected float m_sensitivityOrient = 0.5f;
     protected float m_sensitivityZoom = 0.1f;
     protected Rect m_sceneRect = new Rect();
@@ -189,7 +189,7 @@ public class NPVoxNormalProcessorPreview : EditorWindow
             GUILayout.Label( "Sensitivity:", noFill );
             float fLabelWidthSliders = 50.0f;
             m_sensitivityOrient = NPipeGUILayout.HorizontalSlider( "Rotate:", fLabelWidthSliders, m_sensitivityOrient, 0.01f, 1.0f, GUILayout.Width( 100.0f ) ); GUILayout.Space( -6 );
-            m_sensitivityDrag = NPipeGUILayout.HorizontalSlider( "Pan:", fLabelWidthSliders, m_sensitivityDrag, 0.01f, 1.0f, GUILayout.Width( 100.0f ) ); GUILayout.Space( -6 );
+            m_sensitivityDrag = NPipeGUILayout.HorizontalSlider( "Pan:", fLabelWidthSliders, m_sensitivityDrag, 0.01f, 0.1f, GUILayout.Width( 100.0f ) ); GUILayout.Space( -6 );
             m_sensitivityZoom = NPipeGUILayout.HorizontalSlider( "Zoom:", fLabelWidthSliders, m_sensitivityZoom, 0.01f, 1.0f, GUILayout.Width( 100.0f ) ); GUILayout.Space( -6 );
             GUILayout.Label( "______________________", noFill );
 
@@ -264,11 +264,14 @@ public class NPVoxNormalProcessorPreview : EditorWindow
             NPVoxMeshData[] voxMeshData = m_context.MeshOutput.GetVoxMeshData();
             Vector3 voxSize = m_context.MeshOutput.VoxelSize;
             Vector3 voxExtent = voxSize * 0.5f;
-            Color c = new Color( 0.3f, 0.3f, 0.3f );
+            Color cOutline = new Color( 0.3f, 0.3f, 0.3f );
+            Color cNormals = new Color( 0.4f, 0.4f, 0.4f );
 
             Vector3 v1 = new Vector3( voxSize.x, 0, 0 );
             Vector3 v2 = new Vector3( 0, voxSize.y, 0 );
             Vector3 v3 = new Vector3( 0, 0, voxSize.z );
+
+            Vector3[] normals = m_context.PreviewMesh.normals;
 
             foreach ( NPVoxMeshData vox in voxMeshData )
             {
@@ -277,12 +280,12 @@ public class NPVoxNormalProcessorPreview : EditorWindow
                     if ( m_previewGUIDrawOutlines )
                     {
                         Vector3 voxPosition = new Vector3( vox.voxelCenter.x, vox.voxelCenter.y, vox.voxelCenter.z );
-                        NPipeGL.DrawParallelepiped( voxPosition - voxExtent, v1, v2, v3, c );
+                        NPipeGL.DrawParallelepiped( voxPosition - voxExtent, v1, v2, v3, cOutline );
                     }
 
                     if ( m_previewGUIDrawNormals )
                     {
-
+                        NPipeGL.DrawLine( vox.voxelCenter, vox.voxelCenter + normals[ vox.vertexIndexOffsetBegin ] * voxSize.x, cNormals );
                     }
                 }
             }

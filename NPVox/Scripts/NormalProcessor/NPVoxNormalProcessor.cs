@@ -101,9 +101,9 @@ public abstract class NPVoxNormalProcessor : ScriptableObject, ICloneable
         OneTimeInit();
     }
 
-    public void InitOutputBuffer( Vector3[] inNormals )
+    public void InitOutputBuffer( int length )
     {
-        m_normalOutput = new Vector3[inNormals.Length];
+        m_normalOutput = new Vector3[ length ];
     }
 
     public void Process( NPVoxModel model, NPVoxMeshData[] tempdata, Vector3[] inNormals, Vector3[] outNormals)
@@ -285,5 +285,12 @@ public abstract class NPVoxNormalProcessor : ScriptableObject, ICloneable
     public Vector3[] GetOutput()
     {
         return m_normalOutput;
+    }
+
+    public Vector3[] GetOutputCopy()
+    {
+        Vector3[] copy = new Vector3[ m_normalOutput.Length ];
+        m_normalOutput.CopyTo( copy, 0 );
+        return copy;
     }
 }
