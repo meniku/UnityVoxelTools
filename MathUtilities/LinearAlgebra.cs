@@ -52,7 +52,7 @@ namespace MathUtilities
         {
             float s;
             Vector3 xx = ProjectPointToLine(p1, p2, x, out s);
-            if (s > 1.0f)
+            if (s * s > ( p2 - p1 ).sqrMagnitude )
             {
                 return p2;
             }
