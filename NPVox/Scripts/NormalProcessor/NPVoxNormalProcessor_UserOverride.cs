@@ -87,6 +87,7 @@ public class NPVoxNormalProcessor_UserOverride : NPVoxNormalProcessor, ISerializ
 
     public override void OnListChanged( NPVoxNormalProcessorList _list )
     {
+        base.OnListChanged(_list);
     }
 
 }

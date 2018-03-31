@@ -106,8 +106,8 @@ public class NPVoxNormalProcessorListDrawer : PropertyDrawer
                 }
             }
 
-            NPVoxNormalProcessor itemToMoveUp = null;
-            NPVoxNormalProcessor itemToMoveDown = null;
+            NPVoxNormalProcessor itemToMoveBack = null;
+            NPVoxNormalProcessor itemToMoveForward = null;
 
             foreach ( NPVoxNormalProcessor processor in processorList.GetProcessors() )
             {
@@ -133,12 +133,12 @@ public class NPVoxNormalProcessorListDrawer : PropertyDrawer
 
                 if ( GUILayout.Button( "^", GUILayout.Width( s_widthUpDownButton ), GUILayout.ExpandWidth( true ) ) )
                 {
-                    itemToMoveUp = processor;
+                    itemToMoveBack = processor;
                 }
 
                 if ( GUILayout.Button( "v", GUILayout.Width( s_widthUpDownButton ), GUILayout.ExpandWidth( true ) ) )
                 {
-                    itemToMoveDown = processor;
+                    itemToMoveForward = processor;
                 }
 
                 if ( GUILayout.Button( "X" , GUILayout.Width(s_widthUpDownButton), GUILayout.ExpandWidth( true ) ) )
@@ -155,16 +155,16 @@ public class NPVoxNormalProcessorListDrawer : PropertyDrawer
                 GUILayout.Space( 10.0f );
             }
             
-            if ( itemToMoveUp )
+            if ( itemToMoveBack )
             {
-                processorList.MoveProcessorUp( itemToMoveUp );
-                itemToMoveUp = null;
+                processorList.MoveProcessorBack( itemToMoveBack );
+                itemToMoveBack = null;
             }
 
-            if ( itemToMoveDown )
+            if ( itemToMoveForward )
             {
-                processorList.MoveProcessorDown( itemToMoveDown );
-                itemToMoveDown = null;
+                processorList.MoveProcessorForward( itemToMoveForward );
+                itemToMoveForward = null;
             }
 
             GUILayout.Space( s_verticalSpaceEnd );

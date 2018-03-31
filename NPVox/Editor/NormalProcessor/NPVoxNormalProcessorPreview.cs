@@ -81,14 +81,17 @@ public class NPVoxNormalProcessorPreview : EditorWindow
         NPVoxNormalProcessor processor = m_context.ViewedProcessor;
         NPVoxAttributeNormalProcessorListItem listItemAttribute = NPipeReflectionUtil.GetAttribute<NPVoxAttributeNormalProcessorListItem>( processor );
         m_title = listItemAttribute.EditorName;
-
+        
         InitScene();
     }
 
     void Update()
     {
-        UpdateScene();
-        Repaint();
+        if ( m_context != null && m_context.IsValid )
+        {
+            UpdateScene();
+            Repaint();
+        }
     }
 
     void OnEnable()
@@ -97,9 +100,16 @@ public class NPVoxNormalProcessorPreview : EditorWindow
 
     void OnDestroy()
     {
-        m_context.Invalidate();
-        m_context = null;
-        m_renderer.Cleanup();
+        if ( m_context != null )
+        {
+            m_context.Invalidate();
+            m_context = null;
+        }
+
+        if ( m_renderer != null )
+        {
+            m_renderer.Cleanup();
+        }
     }
 
 
@@ -226,15 +236,7 @@ public class NPVoxNormalProcessorPreview : EditorWindow
         }
         else
         {
-            // Why is the context invalid?
-            if ( m_context != null )
-            {
-
-            }
-            else
-            {
-                GUILayout.Label( "The preview context is not set!" );
-            }
+            GUILayout.Label("Invalid preview context!");
         }
     }
 
@@ -352,38 +354,41 @@ public class NPVoxNormalProcessorPreview : EditorWindow
     
     void UpdateScene()
     {
-        if ( m_cameraType == 0 )
+        if ( m_renderer != null )
         {
-            Vector3 currentRotation = m_renderer.camera.transform.rotation.eulerAngles;
+            if (m_cameraType == 0)
+            {
+                Vector3 currentRotation = m_renderer.camera.transform.rotation.eulerAngles;
 
-            m_renderer.camera.transform.rotation = Quaternion.Euler( new Vector3(
-                currentRotation.x + m_mouseRotate.y * m_sensitivityOrient,
-                currentRotation.y + m_mouseRotate.x * m_sensitivityOrient,
-                currentRotation.z ) );
+                m_renderer.camera.transform.rotation = Quaternion.Euler(new Vector3(
+                    currentRotation.x + m_mouseRotate.y * m_sensitivityOrient,
+                    currentRotation.y + m_mouseRotate.x * m_sensitivityOrient,
+                    currentRotation.z));
 
-            m_renderer.camera.transform.position += m_renderer.camera.transform.forward * -m_mouseZoom * m_sensitivityZoom;
-            m_renderer.camera.transform.position += m_renderer.camera.transform.right * -m_mousePan.x * m_sensitivityDrag;
-            m_renderer.camera.transform.position += m_renderer.camera.transform.up * m_mousePan.y * m_sensitivityDrag;
+                m_renderer.camera.transform.position += m_renderer.camera.transform.forward * -m_mouseZoom * m_sensitivityZoom;
+                m_renderer.camera.transform.position += m_renderer.camera.transform.right * -m_mousePan.x * m_sensitivityDrag;
+                m_renderer.camera.transform.position += m_renderer.camera.transform.up * m_mousePan.y * m_sensitivityDrag;
+            }
+            else if (m_cameraType == 1)
+            {
+                Vector3 currentRotation = m_renderer.camera.transform.rotation.eulerAngles;
+                float distance = m_renderer.camera.transform.position.magnitude;
+
+                m_renderer.camera.transform.rotation = Quaternion.Euler(new Vector3(
+                    currentRotation.x + m_mouseRotate.y * m_sensitivityOrient,
+                    currentRotation.y + m_mouseRotate.x * m_sensitivityOrient,
+                    currentRotation.z));
+
+                m_renderer.camera.transform.position = -m_renderer.camera.transform.forward * (distance + m_mouseZoom * m_sensitivityZoom);
+            }
+
+            // Reset input states
+            m_mouseZoom = 0.0f;
+            m_mouseRotate = Vector2.zero;
+            m_mousePan = Vector2.zero;
+
+            UpdateSceneInternal();
         }
-        else if ( m_cameraType == 1 )
-        {
-            Vector3 currentRotation = m_renderer.camera.transform.rotation.eulerAngles;
-            float distance = m_renderer.camera.transform.position.magnitude;
-
-            m_renderer.camera.transform.rotation = Quaternion.Euler( new Vector3(
-                currentRotation.x + m_mouseRotate.y * m_sensitivityOrient,
-                currentRotation.y + m_mouseRotate.x * m_sensitivityOrient,
-                currentRotation.z ) );
-
-            m_renderer.camera.transform.position = -m_renderer.camera.transform.forward * ( distance + m_mouseZoom * m_sensitivityZoom );
-        }
-
-        // Reset input states
-        m_mouseZoom = 0.0f;
-        m_mouseRotate = Vector2.zero;
-        m_mousePan = Vector2.zero;
-
-        UpdateSceneInternal();
     }
 
     protected virtual void OnGUIInternal() { }

@@ -72,12 +72,26 @@ public class NPVoxNormalProcessorList : ScriptableObject, ICloneable, ISerializa
 
     public void DestroyProcessor( NPVoxNormalProcessor processor )
     {
+        NPVoxNormalProcessor next = GetNextInList(processor);
         m_processorList.Remove( processor );
 
         processor.Passes.Clear();
+        
+        if ( next != null )
+        {
+            bool bInform = false;
+            foreach (NPVoxNormalProcessor p in m_processorList)
+            {
+                if (bInform || p == next)
+                {
+                    bInform = true;
+                    p.OnListChanged(this);
+                }
+            }
+        }
 
-        ScriptableObject.DestroyImmediate( processor, true );
-        UnityEditor.EditorUtility.SetDirty( this );
+        ScriptableObject.DestroyImmediate(processor, true);
+        UnityEditor.EditorUtility.SetDirty(this);
     }
 
     public List<NPVoxNormalProcessor> GetProcessors()
@@ -111,7 +125,7 @@ public class NPVoxNormalProcessorList : ScriptableObject, ICloneable, ISerializa
         }
     }
 
-    public void MoveProcessorUp( NPVoxNormalProcessor processor )
+    public void MoveProcessorBack( NPVoxNormalProcessor processor )
     {
         int index = m_processorList.FindIndex( item => item == processor );
         if ( index > 0 )
@@ -132,7 +146,7 @@ public class NPVoxNormalProcessorList : ScriptableObject, ICloneable, ISerializa
         }
     }
 
-    public void MoveProcessorDown( NPVoxNormalProcessor processor )
+    public void MoveProcessorForward( NPVoxNormalProcessor processor )
     {
         int index = m_processorList.FindIndex( item => item == processor );
         if ( index >= 0 && index < m_processorList.Count - 1 )
@@ -142,10 +156,11 @@ public class NPVoxNormalProcessorList : ScriptableObject, ICloneable, ISerializa
             UnityEditor.EditorUtility.SetDirty( this );
         }
 
+        NPVoxNormalProcessor previous = GetPreviousInList(processor);
         bool bInform = false;
         foreach ( NPVoxNormalProcessor p in m_processorList )
         {
-            if ( bInform || p == processor )
+            if ( bInform || previous == null || p == previous )
             {
                 bInform = true;
                 p.OnListChanged( this );
@@ -185,6 +200,14 @@ public class NPVoxNormalProcessorList : ScriptableObject, ICloneable, ISerializa
         }
 
         return null;
+    }
+
+    public void OnImport()
+    {
+        foreach (NPVoxNormalProcessor processor in m_processorList)
+        {
+            processor.OnListChanged(this);
+        }
     }
 
     public object Clone()

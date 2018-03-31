@@ -199,6 +199,11 @@ public class NPVoxMeshOutput : NPVoxCompositeProcessorBase<NPVoxIModelFactory, M
 
             NormalProcessors.RequiresMigration = false;
         }
+
+        if ( NormalProcessors != null )
+        {
+            NormalProcessors.OnImport();
+        }
     }
 
     public NPVoxMeshData[] GetVoxMeshData()
