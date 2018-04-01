@@ -17,6 +17,8 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
 
     private static sbyte m_currentSelectionMode = UNSELECTED;
 
+    private bool m_previewHighlightOverrides = true;
+
     private Vector3 m_normalField = Vector3.zero;
 
     private Dictionary<int, Vector3> m_normalStage = new Dictionary<int, Vector3>();
@@ -85,7 +87,41 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
 
         if ( m_context.ViewedProcessor.IsOutputValid() )
         {
-            GUILayout.Space( 12.0f );
+            if (GUILayout.Button(m_previewHighlightOverrides ? "Unhighlight Overrides" : "Highlight Overrides", widthWideButton)) { m_previewHighlightOverrides = !m_previewHighlightOverrides; }
+
+            GUILayout.Space(8.0f);
+
+            // Last selected voxel info
+            GUILayout.Space(12.0f);
+            string selectedCoord = "-";
+            string selectedNormalX = "-";
+            string selectedNormalY = "-";
+            string selectedNormalZ = "-";
+            string selectedVIndex = "-";
+
+            if (m_lastSelected.Valid && m_lastSelectedData != null)
+            {
+                selectedCoord = m_lastSelected.X + " " + m_lastSelected.Y + " " + m_lastSelected.Z;
+                selectedVIndex = m_lastSelectedData.vertexIndexOffsetBegin.ToString();
+                Vector3 normal = m_context.PreviewMesh.normals[m_lastSelectedData.vertexIndexOffsetBegin];
+                selectedNormalX = normal.x.ToString();
+                selectedNormalY = normal.y.ToString();
+                selectedNormalZ = normal.z.ToString();
+            }
+
+            int labelWidth = 65, columnWidth = 150, columnSpace = -5;
+            GUILayout.Label("Last Selected:", noFill);
+            NPipeGUILayout.TableRow("Coord:", labelWidth, columnSpace, new NPipeGUILayout.TableColumn(selectedCoord, columnWidth));
+            NPipeGUILayout.TableRow("v-Index:", labelWidth, columnSpace, new NPipeGUILayout.TableColumn(selectedVIndex, columnWidth));
+            NPipeGUILayout.TableRow("Normal X:", labelWidth, columnSpace, new NPipeGUILayout.TableColumn(selectedNormalX, columnWidth));
+            NPipeGUILayout.TableRow("Normal Y:", labelWidth, columnSpace, new NPipeGUILayout.TableColumn(selectedNormalY, columnWidth));
+            NPipeGUILayout.TableRow("Normal Z:", labelWidth, columnSpace, new NPipeGUILayout.TableColumn(selectedNormalZ, columnWidth));
+            GUILayout.Space(12.0f);
+
+            // General selection related controls
+            if (GUILayout.Button("RESET SELECTION (Esc)", widthWideButton)) { ResetSelection(); }
+
+            // Input field related controls
             Color currentColor = GUI.backgroundColor;
             GUI.backgroundColor = bgColorInput;
             GUILayout.Label( "INPUT:", noFill );
@@ -108,12 +144,11 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
             if ( GUILayout.Button( "Normalize", widthWideButton ) ) { m_normalField = m_normalField.normalized; }
             GUILayout.EndHorizontal();
             GUILayout.Label("APPLY TO INPUT:", noFill);
-            if ( GUILayout.Button("Source (Q)", widthWideButton))
-            {
-                Handle_SourceToInput();
-            }
+            if ( GUILayout.Button("Source (Q)", widthWideButton)) { Handle_SourceToInput(); }
             GUI.backgroundColor = currentColor;
 
+
+            // Target selection related controls
             GUILayout.Space( 12.0f );
             currentColor = GUI.backgroundColor;
             GUI.backgroundColor = bgColorTarget;
@@ -126,34 +161,8 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
             GUI.backgroundColor = currentColor;
             GUILayout.Space( 12.0f );
 
-            if ( GUILayout.Button( "RESET SELECTION", widthWideButton ) ) { ResetSelection(); }
 
-            // Selected voxel info
-            GUILayout.Space( 12.0f );
-            string selectedCoord = "-";
-            string selectedNormalX = "-";
-            string selectedNormalY = "-";
-            string selectedNormalZ = "-";
-            string selectedVIndex = "-";
-
-            if ( m_lastSelected.Valid && m_lastSelectedData != null )
-            {
-                selectedCoord = m_lastSelected.X + " " + m_lastSelected.Y + " " + m_lastSelected.Z;
-                selectedVIndex = m_lastSelectedData.vertexIndexOffsetBegin.ToString();
-                Vector3 normal = m_context.PreviewMesh.normals[ m_lastSelectedData.vertexIndexOffsetBegin ];
-                selectedNormalX = normal.x.ToString();
-                selectedNormalY = normal.y.ToString();
-                selectedNormalZ = normal.z.ToString();
-            }
-
-            int labelWidth = 65, columnWidth = 150, columnSpace = -5;
-            GUILayout.Label( "Last Selected:", noFill );
-            NPipeGUILayout.TableRow( "Coord:", labelWidth, columnSpace, new NPipeGUILayout.TableColumn( selectedCoord, columnWidth ) );
-            NPipeGUILayout.TableRow( "v-Index:", labelWidth, columnSpace, new NPipeGUILayout.TableColumn( selectedVIndex, columnWidth ) );
-            NPipeGUILayout.TableRow( "Normal X:", labelWidth, columnSpace, new NPipeGUILayout.TableColumn( selectedNormalX, columnWidth ) );
-            NPipeGUILayout.TableRow( "Normal Y:", labelWidth, columnSpace, new NPipeGUILayout.TableColumn( selectedNormalY, columnWidth ) );
-            NPipeGUILayout.TableRow( "Normal Z:", labelWidth, columnSpace, new NPipeGUILayout.TableColumn( selectedNormalZ, columnWidth ) );
-
+           
             // Reset override functions
             GUILayout.BeginVertical( GUILayout.ExpandWidth( false ), GUILayout.ExpandHeight( true ) );
             GUILayout.EndVertical();
@@ -177,8 +186,6 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
                 ResetSelection();
                 InitMeshNormals();
             }
-
-            GUILayout.Space( 12.0f );
 
             if ( GUILayout.Button( "RESET ALL OVERRIDES", widthWideButton ) )
             {
@@ -281,6 +288,7 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
     {
         if ( m_context.ViewedProcessor.IsOutputValid() )
         {
+            NPVoxNormalProcessor_UserOverride processor = (NPVoxNormalProcessor_UserOverride)m_context.ViewedProcessor;
             Vector3 voxSize = m_context.MeshOutput.VoxelSize;
             Vector3 voxExtent = voxSize * 0.5f;
             Vector3 v1 = new Vector3( voxSize.x, 0, 0 );
@@ -293,10 +301,15 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
             {
                 if ( !vox.isHidden )
                 {
+                    Vector3 voxPosition = new Vector3(vox.voxelCenter.x, vox.voxelCenter.y, vox.voxelCenter.z);
+                    if ( m_previewHighlightOverrides && processor.m_overrideNormalsRT.ContainsKey( vox.voxCoord ) )
+                    {
+                        NPipeGL.DrawParallelepiped(voxPosition - voxExtent, v1, v2, v3, new Color( 0.5f, 0.0f, 0.0f ) );
+                    }
+
                     sbyte selection = GetSelection( vox.voxCoord );
                     if ( selection != UNSELECTED )
                     {
-                        Vector3 voxPosition = new Vector3( vox.voxelCenter.x, vox.voxelCenter.y, vox.voxelCenter.z );
                         NPipeGL.DrawParallelepiped( voxPosition - voxExtent, v1, v2, v3, selection == SELECTED_TARGET ? Color.red : Color.green );
                     }
 
@@ -347,6 +360,10 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
 
                             case KeyCode.X:
                                 Handle_SourceInputToTarget();
+                                break;
+
+                            case KeyCode.Escape:
+                                ResetSelection();
                                 break;
 
                             default:

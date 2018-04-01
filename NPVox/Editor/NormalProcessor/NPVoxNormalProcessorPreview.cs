@@ -34,7 +34,7 @@ public class NPVoxNormalProcessorPreview : EditorWindow
     protected Matrix4x4 m_meshTransform = Matrix4x4.identity;
 
     protected static Material s_materialHandles = null;
-
+    
     protected static readonly Color s_colorBG = new Color( 0.3f, 0.3f, 0.3f );
     protected static readonly Color s_colorBox = new Color( 0.5f, 0.5f, 0.5f );
 
@@ -186,6 +186,7 @@ public class NPVoxNormalProcessorPreview : EditorWindow
             noStretch.stretchHeight = false;
             GUILayoutOption[] noFill = { GUILayout.ExpandWidth( false ), GUILayout.ExpandHeight( false ) };
             GUILayoutOption[] fill = { GUILayout.ExpandWidth( true ), GUILayout.ExpandHeight( true ) };
+            float widthWideButton = 203f;
 
             // Draw GUI
             GUILayout.BeginHorizontal( GUILayout.ExpandWidth( false ) );
@@ -201,19 +202,15 @@ public class NPVoxNormalProcessorPreview : EditorWindow
             m_sensitivityOrient = NPipeGUILayout.HorizontalSlider( "Rotate:", fLabelWidthSliders, m_sensitivityOrient, 0.01f, 1.0f, GUILayout.Width( 100.0f ) ); GUILayout.Space( -6 );
             m_sensitivityDrag = NPipeGUILayout.HorizontalSlider( "Pan:", fLabelWidthSliders, m_sensitivityDrag, 0.01f, 0.1f, GUILayout.Width( 100.0f ) ); GUILayout.Space( -6 );
             m_sensitivityZoom = NPipeGUILayout.HorizontalSlider( "Zoom:", fLabelWidthSliders, m_sensitivityZoom, 0.01f, 1.0f, GUILayout.Width( 100.0f ) ); GUILayout.Space( -6 );
-            GUILayout.Label( "______________________", noFill );
 
-            if ( GUILayout.Button( m_previewGUIDrawOutlines ? "Hide Outlines" : "Show Outlines", noFill ) )
-            {
-                m_previewGUIDrawOutlines = !m_previewGUIDrawOutlines;
-            }
+            GUILayout.Space(16.0f);
 
-            if ( GUILayout.Button( m_previewGUIDrawNormals ? "Hide Normals" : "Show Normals", noFill ) )
-            {
-                m_previewGUIDrawNormals = !m_previewGUIDrawNormals;
-            }
-
-            GUILayout.Label( "______________________", noFill );
+            GUILayout.BeginHorizontal(noStretch, GUILayout.ExpandWidth(false));
+            if ( GUILayout.Button( m_previewGUIDrawOutlines ? "Hide Outlines" : "Show Outlines", GUILayout.Width(widthWideButton * 0.5f - 2)) ) { m_previewGUIDrawOutlines = !m_previewGUIDrawOutlines; }
+            if ( GUILayout.Button( m_previewGUIDrawNormals ? "Hide Normals" : "Show Normals", GUILayout.Width(widthWideButton * 0.5f - 2)) ) { m_previewGUIDrawNormals = !m_previewGUIDrawNormals; }
+            GUILayout.EndHorizontal();
+            
+            // Draw internal gui
             OnGUIInternal();
 
             GUILayout.EndVertical();
