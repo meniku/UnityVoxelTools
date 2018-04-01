@@ -107,58 +107,26 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
             GUILayout.BeginHorizontal( noStretch, noFill );
             if ( GUILayout.Button( "Normalize", widthWideButton ) ) { m_normalField = m_normalField.normalized; }
             GUILayout.EndHorizontal();
+            GUILayout.Label("APPLY TO INPUT:", noFill);
+            if ( GUILayout.Button("Source (Q)", widthWideButton))
+            {
+                Handle_SourceToInput();
+            }
             GUI.backgroundColor = currentColor;
 
             GUILayout.Space( 12.0f );
             currentColor = GUI.backgroundColor;
             GUI.backgroundColor = bgColorTarget;
             GUILayout.Label( "APPLY TO TARGET:", noFill );
-            if ( GUILayout.Button( "Input Field", widthWideButton ) )
-            {
-                List<int> indices = GetSelectedIndices( SELECTED_TARGET );
-                foreach ( int i in indices )
-                {
-                    m_normalStage.Add( i, m_normalField );
-                }
-                ApplyNormalStage();
-                m_normalStage.Clear();
-                ResetSelection();
-            }
 
-            if ( GUILayout.Button( "Source", widthWideButton ) )
-            {
-                Vector3 average = Vector3.zero;
-                bool success = ComputeSourceAverage( ref average );
-                if ( average.sqrMagnitude > 0 )
-                {
-                    average = average.normalized;
-                }
-
-                if ( success )
-                {
-                    List<int> indices = GetSelectedIndices( SELECTED_TARGET );
-                    foreach ( int i in indices )
-                    {
-                        m_normalStage.Add( i, average );
-                    }
-                    ApplyNormalStage();
-                    m_normalStage.Clear();
-                    ResetSelection();
-                }
-            }
-            
-            if ( GUILayout.Button( "Neighbors", widthWideButton ) )
-            {
-                // TODO: Apply normals from neighbors
-            }
+            if ( GUILayout.Button( "Input Field (W)", widthWideButton ) )  { Handle_InputToTarget(); }
+            if ( GUILayout.Button( "Source (S)", widthWideButton ) ) { Handle_SourceToTarget(); }
+            if ( GUILayout.Button( "Source + Input Field (X)", widthWideButton ) ) { Handle_SourceInputToTarget(); }
             
             GUI.backgroundColor = currentColor;
-
             GUILayout.Space( 12.0f );
-            if ( GUILayout.Button( "RESET SELECTION", widthWideButton ) )
-            {
-                ResetSelection();
-            }
+
+            if ( GUILayout.Button( "RESET SELECTION", widthWideButton ) ) { ResetSelection(); }
 
             // Selected voxel info
             GUILayout.Space( 12.0f );
@@ -233,6 +201,82 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
         }
     }
 
+    #region BUTTON HANDLERS
+
+    protected void Handle_SourceToInput()
+    {
+        Vector3 average = Vector3.zero;
+        bool success = ComputeSourceAverage(ref average);
+        if (average.sqrMagnitude > 0)
+        {
+            average = average.normalized;
+        }
+
+        if (success)
+        {
+            m_normalField = average;
+            ResetSelection();
+        }
+    }
+
+    protected void Handle_SourceToTarget()
+    {
+        Vector3 average = Vector3.zero;
+        bool success = ComputeSourceAverage(ref average);
+        if (average.sqrMagnitude > 0)
+        {
+            average = average.normalized;
+        }
+
+        if (success)
+        {
+            List<int> indices = GetSelectedIndices(SELECTED_TARGET);
+            foreach (int i in indices)
+            {
+                m_normalStage.Add(i, average);
+            }
+            ApplyNormalStage();
+            m_normalStage.Clear();
+            ResetSelection();
+        }
+    }
+
+    protected void Handle_InputToTarget()
+    {
+        List<int> indices = GetSelectedIndices(SELECTED_TARGET);
+        foreach (int i in indices)
+        {
+            m_normalStage.Add(i, m_normalField);
+        }
+        ApplyNormalStage();
+        m_normalStage.Clear();
+        ResetSelection();
+    }
+
+    protected void Handle_SourceInputToTarget()
+    {
+        Vector3 average = Vector3.zero;
+        bool success = ComputeSourceAverage(ref average, true);
+        if (average.sqrMagnitude > 0)
+        {
+            average = average.normalized;
+        }
+
+        if (success)
+        {
+            List<int> indices = GetSelectedIndices(SELECTED_TARGET);
+            foreach (int i in indices)
+            {
+                m_normalStage.Add(i, average);
+            }
+            ApplyNormalStage();
+            m_normalStage.Clear();
+            ResetSelection();
+        }
+    }
+
+    #endregion
+
     protected override void DrawSceneInternal( Rect _rect )
     {
         if ( m_context.ViewedProcessor.IsOutputValid() )
@@ -283,6 +327,32 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
 
                 case EventType.MouseUp:
                     m_currentSelectionMode = UNSELECTED;
+                    break;
+
+                case EventType.KeyDown:
+                    {
+                        switch ( e.keyCode )
+                        {
+                            case KeyCode.Q:
+                                Handle_SourceToInput();
+                                break;
+
+                            case KeyCode.W:
+                                Handle_InputToTarget();
+                                break;
+
+                            case KeyCode.S:
+                                Handle_SourceToTarget();
+                                break;
+
+                            case KeyCode.X:
+                                Handle_SourceInputToTarget();
+                                break;
+
+                            default:
+                                break;
+                        }
+                    }
                     break;
             }
         }
@@ -422,7 +492,7 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
         }
     }
 
-    private bool ComputeSourceAverage( ref Vector3 _out )
+    private bool ComputeSourceAverage( ref Vector3 _out, bool _includeInputField = false )
     {
         NPVoxModel voxModel = m_context.MeshOutput.GetVoxModel();
         List<Vector3> normalsSum = new List<Vector3>();
@@ -441,6 +511,11 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
                     normalsSum.Add( normalsMesh[ vox.vertexIndexOffsetBegin ] );
                 }
             }
+        }
+
+        if ( _includeInputField )
+        {
+            normalsSum.Add(m_normalField);
         }
         
         bool bResult = MathUtilities.Statistical.ComputeAverage( normalsSum, ref _out );
