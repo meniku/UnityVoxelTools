@@ -200,6 +200,8 @@ public class NPVoxMeshOutput : NPVoxCompositeProcessorBase<NPVoxIModelFactory, M
             NormalProcessors.RequiresMigration = false;
         }
 
+        m_voxMeshData = NPVoxMeshGenerator.GenerateVoxMeshData(GetVoxModel(), VoxelSize, Optimization, BloodColorIndex, Loop, Cutout, Include);
+
         if ( NormalProcessors != null )
         {
             NormalProcessors.OnImport();

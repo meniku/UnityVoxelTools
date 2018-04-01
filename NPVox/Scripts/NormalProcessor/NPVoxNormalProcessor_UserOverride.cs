@@ -7,7 +7,7 @@ using UnityEngine;
 public class NPVoxNormalProcessor_UserOverride : NPVoxNormalProcessor, ISerializationCallbackReceiver
 {
     [SerializeField]
-    private int[] m_overrideNormalIndices = null;
+    private NPVoxCoord[] m_overrideCoords = null;
 
     [SerializeField]
     private Vector3[] m_overrideNormals = null;
@@ -15,7 +15,7 @@ public class NPVoxNormalProcessor_UserOverride : NPVoxNormalProcessor, ISerializ
     NPVoxNormalProcessorPass_ApplyNormals m_passApplyNormals;
 
     [NonSerialized]
-    public Dictionary<int, Vector3> m_overrideNormalsRT;
+    public Dictionary<NPVoxCoord, Vector3> m_overrideNormalsRT;
 
     public void OnBeforeSerialize()
     {
@@ -26,15 +26,15 @@ public class NPVoxNormalProcessor_UserOverride : NPVoxNormalProcessor, ISerializ
     {
         if ( m_overrideNormalsRT == null )
         {
-            m_overrideNormalsRT = new Dictionary<int, Vector3>();
+            m_overrideNormalsRT = new Dictionary<NPVoxCoord, Vector3>();
         }
 
-        if ( m_overrideNormalIndices != null && m_overrideNormals != null )
+        if (m_overrideCoords != null && m_overrideNormals != null )
         {
-            int iLength = Mathf.Min( m_overrideNormalIndices.Length, m_overrideNormals.Length );
+            int iLength = Mathf.Min(m_overrideCoords.Length, m_overrideNormals.Length );
             for ( int i = 0; i < iLength; i++ )
             {
-                m_overrideNormalsRT.Add( m_overrideNormalIndices[ i ], m_overrideNormals[ i ] );
+                m_overrideNormalsRT.Add(m_overrideCoords[ i ], m_overrideNormals[ i ] );
             }
         }
     }
@@ -43,16 +43,16 @@ public class NPVoxNormalProcessor_UserOverride : NPVoxNormalProcessor, ISerializ
     {
         if ( m_overrideNormalsRT == null )
         {
-            m_overrideNormalsRT = new Dictionary<int, Vector3>();
+            m_overrideNormalsRT = new Dictionary<NPVoxCoord, Vector3>();
         }
 
-        m_overrideNormalIndices = new int[ m_overrideNormalsRT.Count ];
+        m_overrideCoords = new NPVoxCoord[ m_overrideNormalsRT.Count ];
         m_overrideNormals = new Vector3[ m_overrideNormalsRT.Count ];
 
         int i = 0;
-        foreach ( int key in m_overrideNormalsRT.Keys )
+        foreach (NPVoxCoord key in m_overrideNormalsRT.Keys )
         {
-            m_overrideNormalIndices[ i ] = key;
+            m_overrideCoords[ i ] = key;
             m_overrideNormals[ i ] = m_overrideNormalsRT[ key ];
             i++;
         }
@@ -78,11 +78,11 @@ public class NPVoxNormalProcessor_UserOverride : NPVoxNormalProcessor, ISerializ
     {
     }
 
-    protected override void PerModelInit()
+    protected override void OnBeforeProcess(NPVoxModel model, NPVoxMeshData[] tempdata)
     {
         WriteBuffersForSerialization();
-        m_passApplyNormals.m_indices = m_overrideNormalIndices;
-        m_passApplyNormals.m_normals = m_overrideNormals;
+        
+        m_passApplyNormals.m_normalData = m_overrideNormalsRT;
     }
 
     public override void OnListChanged( NPVoxNormalProcessorList _list )

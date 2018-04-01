@@ -201,10 +201,7 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
                         sbyte selection = GetSelection( vox.voxCoord );
                         if ( selection == SELECTED_TARGET )
                         {
-                            for ( int i = 0; i < vox.numVertices; i++ )
-                            {
-                                processor.m_overrideNormalsRT.Remove( vox.vertexIndexOffsetBegin + i );
-                            }
+                            processor.m_overrideNormalsRT.Remove(vox.voxCoord);
                         }
                     }
                 }
@@ -378,10 +375,11 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
 
                 if ( GetSelection( coord ) == SELECTED_TARGET )
                 {
+                    processor.m_overrideNormalsRT[vox.voxCoord] = m_normalStage[index];
+
                     for ( int i = 0; i < vox.numVertices; i++ )
                     {
-                        processor.m_overrideNormalsRT[ vox.vertexIndexOffsetBegin + i ] = m_normalStage[ index ];
-                        normals[ vox.vertexIndexOffsetBegin + i ] = m_normalStage[ index ];
+                        normals[vox.vertexIndexOffsetBegin + i] = m_normalStage[index];
                     }
                 }
             }
@@ -396,7 +394,7 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
 
     private void RemoveRedundantOverrides()
     {
-        List<int> overridesToRemove = new List<int>();
+        List<NPVoxCoord> overridesToRemove = new List<NPVoxCoord>();
 
         NPVoxNormalProcessor_UserOverride processor = ( NPVoxNormalProcessor_UserOverride ) m_context.ViewedProcessor;
         NPVoxNormalProcessor previous = m_context.MeshOutput.NormalProcessors.GetPreviousInList( processor );
@@ -405,23 +403,20 @@ public class NPVoxNormalProcessorPreview_UserOverride : NPVoxNormalProcessorPrev
         {
             if ( !vox.isHidden )
             {
-                for ( int i = 0; i < vox.numVertices; i++ )
+                Vector3 normal = Vector3.zero;
+                if (previous != null)
                 {
-                    Vector3 normal = Vector3.zero;
-                    if ( previous != null )
-                    {
-                        normal = previous.GetOutput()[ vox.vertexIndexOffsetBegin + i ];
-                    }
+                    normal = previous.GetOutput()[vox.vertexIndexOffsetBegin];
+                }
 
-                    if ( processor.m_overrideNormalsRT.ContainsKey( vox.vertexIndexOffsetBegin + i ) && processor.m_overrideNormalsRT[ vox.vertexIndexOffsetBegin + i ] == normal )
-                    {
-                        overridesToRemove.Add( vox.vertexIndexOffsetBegin + i );
-                    }
+                if (processor.m_overrideNormalsRT.ContainsKey(vox.voxCoord) && processor.m_overrideNormalsRT[vox.voxCoord] == normal)
+                {
+                    overridesToRemove.Add(vox.voxCoord);
                 }
             }
         }
 
-        foreach( int i in overridesToRemove )
+        foreach(NPVoxCoord i in overridesToRemove )
         {
             processor.m_overrideNormalsRT.Remove( i );
         }

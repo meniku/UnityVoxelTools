@@ -83,7 +83,7 @@ public abstract class NPVoxNormalProcessor : ScriptableObject, ICloneable
     {
     }
     
-    protected abstract void PerModelInit();
+    protected abstract void OnBeforeProcess( NPVoxModel model, NPVoxMeshData[] tempdata );
 
     protected abstract void OneTimeInit();
 
@@ -119,7 +119,7 @@ public abstract class NPVoxNormalProcessor : ScriptableObject, ICloneable
 
         Vector3[] normalBuffer = new Vector3[inNormals.Length];
 
-        PerModelInit();
+        OnBeforeProcess( model, tempdata );
 
         if ( m_passes.Count == 0 )
         {

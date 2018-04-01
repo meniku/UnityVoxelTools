@@ -203,7 +203,7 @@ public class NPVoxNormalProcessor_Voxel : NPVoxNormalProcessor
         m_passVoxel = AddPass<NPVoxNormalProcessorPass_Voxel>();
     }
 
-    protected override void PerModelInit()
+    protected override void OnBeforeProcess(NPVoxModel model, NPVoxMeshData[] tempdata)
     {
         m_passVoxel.m_normalMode = NormalMode;
     }

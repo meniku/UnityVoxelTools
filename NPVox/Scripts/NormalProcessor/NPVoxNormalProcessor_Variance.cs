@@ -103,7 +103,7 @@ public class NPVoxNormalProcessor_Variance : NPVoxNormalProcessor
         m_passNormalize = AddPass<NPVoxNormalProcessorPass_Normalize>();
     }
 
-    protected override void PerModelInit()
+    protected override void OnBeforeProcess( NPVoxModel model, NPVoxMeshData[] tempdata )
     {
         UnityEngine.Random.InitState(m_normalVarianceSeed);
 
