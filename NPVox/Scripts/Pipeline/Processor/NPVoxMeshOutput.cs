@@ -142,7 +142,7 @@ public class NPVoxMeshOutput : NPVoxCompositeProcessorBase<NPVoxIModelFactory, M
     }
 
 
-    virtual public UnityEngine.Object Clone()
+    public override UnityEngine.Object Clone()
     {
         NPVoxMeshOutput copy = (NPVoxMeshOutput)base.Clone();
         copy.NormalVarianceSeed =  Random.Range(0, int.MaxValue);
@@ -163,6 +163,11 @@ public class NPVoxMeshOutput : NPVoxCompositeProcessorBase<NPVoxIModelFactory, M
     public override void Import()
     {
         base.Import();
+
+        if (NormalProcessors == null)
+        {
+            NormalProcessors = ScriptableObject.CreateInstance<NPVoxNormalProcessorList>();
+        }
 
         // Normal processor migration code
         if ( NormalProcessors && NormalProcessors.RequiresMigration )

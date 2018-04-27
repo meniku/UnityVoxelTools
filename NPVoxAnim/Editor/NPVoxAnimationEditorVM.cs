@@ -333,6 +333,14 @@ public class NPVoxAnimationEditorVM : ScriptableObject
             if (previewMeshOutput == null)
             {
                 previewMeshOutput = (NPVoxCompositeProcessorBase<NPVoxIModelFactory, Mesh>)Animation.MeshFactory.Clone();
+
+                // enable migration in clone in case the source requires migration too.
+                if ( Animation.MeshFactory.NormalProcessors && Animation.MeshFactory.NormalProcessors.RequiresMigration )
+                {
+                    ( ( NPVoxMeshOutput ) previewMeshOutput ).NormalProcessors.RequiresMigration = true;
+                    ( ( NPVoxMeshOutput ) previewMeshOutput ).Import();
+                }
+
                 previewMeshOutput.StorageMode = NPipeStorageMode.MEMORY;
             }
 

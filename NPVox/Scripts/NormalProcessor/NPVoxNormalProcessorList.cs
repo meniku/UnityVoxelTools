@@ -33,6 +33,12 @@ public class NPVoxNormalProcessorList : ScriptableObject, ICloneable, ISerializa
 
     public void AddToAsset( string path )
     {
+        if ( string.IsNullOrEmpty( path ) )
+        {
+            // we don't want to add assets in case we have a temporary object
+            return;
+        }
+
         hideFlags = HideFlags.HideInHierarchy;
 
         UnityEditor.AssetDatabase.AddObjectToAsset(this, path);
